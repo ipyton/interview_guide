@@ -16,3 +16,17 @@ type CounterInterfaceImp struct{}
 
 // Imp 实现实例
 var Imp CounterInterface = &CounterInterfaceImp{}
+
+type CollectionInterface interface {
+	GetBookCollections() ([]*model.BookmarkCollectionModel, error)
+	GetBookMarkItems(collectionID int) ([]*model.BookmarkItemModel, error)
+	DeleteBookMarkItem(resourceID string) error
+	AddBookMarkItem(item *model.BookmarkItemModel) error
+	AddBookMarkCollection(collection *model.BookmarkCollectionModel) error
+	DeleteBookMarkCollection(collectionID int) error
+}
+
+type QuestionInterface interface {
+	AddQuestion(question *model.QuestionModel) error // Add a new question
+	DelQuestion(id int32) error                      // Delete a question by ID
+}
