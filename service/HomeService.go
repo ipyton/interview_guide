@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -39,7 +40,6 @@ func GetHottestHandler(w http.ResponseWriter, r *http.Request) {
 	// 生成10条记录
 	posts := generateHotPosts()
 
-	// 将生成的记录编码为JSON并写入响应
 	err := json.NewEncoder(w).Encode(posts)
 	if err != nil {
 		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
