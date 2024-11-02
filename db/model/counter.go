@@ -2,10 +2,9 @@ package model
 
 import "time"
 
-// CounterModel 计数器模型
 type CounterModel struct {
-	Id        int32     `gorm:"column:id" json:"id"`
-	Count     int32     `gorm:"column:count" json:"count"`
-	CreatedAt time.Time `gorm:"column:createdAt" json:"createdAt"`
-	UpdatedAt time.Time `gorm:"column:updatedAt" json:"updatedAt"`
+	Id        int       `gorm:"column:id" json:"id" bson:"_id"`
+	Count     int       `gorm:"column:count" json:"count" bson:"count"`
+	CreatedAt time.Time `gorm:"column:createdAt" json:"createdAt" bson:"createdAt"`
+	UpdatedAt time.Time `gorm:"column:updatedAt" json:"updatedAt" bson:"updatedAt"`
 }

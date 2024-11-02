@@ -2,17 +2,19 @@ package service
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"net/http"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
 
-var bookmarkCollectionDAO dao.CollectionDAO = &dao.CollectionDAOImpl{}
+var bookmarkCollectionDAO dao.CollectionInterface = &dao.CollectionInterfaceImpl{}
 
 func GetBookmarkCollections(w http.ResponseWriter, r *http.Request) {
 	collections, err := bookmarkCollectionDAO.GetBookCollections()
 	if err != nil {
-		http.Error(w, err, http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -22,7 +24,12 @@ func GetBookmarkCollections(w http.ResponseWriter, r *http.Request) {
 
 func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
 	collectionID := r.URL.Query().Get("collection_id")
-	items, err := bookCollectionDAO.GetBookMarkItems(collectionID)
+	num, err := strconv.Atoi(collectionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	items, err := bookmarkCollectionDAO.GetBookMarkItems(num)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -50,7 +57,7 @@ func AddBookmarkItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := bookCollectionDAO.AddBookMarkItem(&item)
+	err := bookmarkCollectionDAO.AddBookMarkItem(&item)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -66,7 +73,7 @@ func AddBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := bookCollectionDAO.AddBookMarkCollection(&collection)
+	err := bookmarkCollectionDAO.AddBookMarkCollection(&collection)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -77,7 +84,12 @@ func AddBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 
 func DelBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 	collectionID := r.URL.Query().Get("collection_id")
-	err := bookCollectionDAO.DeleteBookMarkCollection(collectionID)
+	num, err := strconv.Atoi(collectionID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = bookmarkCollectionDAO.DeleteBookMarkCollection(num)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

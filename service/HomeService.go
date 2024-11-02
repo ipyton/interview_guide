@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Hello World")
 }
+
+var questionImp dao.QuestionInterface = &dao.QuestionInterfaceImpl{}
 
 func generateHotPosts() []model.HotPost {
 	var posts []model.HotPost
@@ -33,11 +36,7 @@ func generateHotPosts() []model.HotPost {
 }
 
 func GetHottestHandler(w http.ResponseWriter, r *http.Request) {
-
-	// 设置响应的内容类型为JSON
 	w.Header().Set("Content-Type", "application/json")
-
-	// 生成10条记录
 	posts := generateHotPosts()
 
 	err := json.NewEncoder(w).Encode(posts)
@@ -45,4 +44,26 @@ func GetHottestHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
 		return
 	}
+}
+
+func GetQuestionsByPageHandler(w http.ResponseWriter, r *http.Request) {
+	res := &JsonResult{}
+	w.Header().Set("Content-Type", "application/json")
+
+	decoder := json.NewDecoder(r.Body)
+
+	body := make(map[string]interface{})
+
+	if err := decoder.Decode(&body); err != nil {
+		http.Error(w, "Failed to decode body", http.StatusBadRequest)
+	}
+	posts, _ := questionImp.QueryQuestions(body["page_number"].(int))
+	res.Code = 1
+	res.Data = posts
+	err := json.NewEncoder(w).Encode(res)
+	if err != nil {
+		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
+		return
+	}
+
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"net/http"
 	"wxcloudrun-golang/db"
@@ -9,14 +9,12 @@ import (
 )
 
 func main() {
-	if err := db.Init(); err != nil {
-		panic(fmt.Sprintf("mysql init failed with %+v", err))
-	}
-
-	http.HandleFunc("/", service.IndexHandler)
-	http.HandleFunc("/api/count", service.CounterHandler)
+	db.InitMongo()
+	//http.HandleFunc("/", service.IndexHandler)
+	//http.HandleFunc("/api/count", service.CounterHandler)
 	http.HandleFunc("/home", service.HomeHandler)
 	http.HandleFunc("/home/get", service.GetHottestHandler)
+	http.HandleFunc("/questions/get", service.GetQuestionsByPageHandler)
 	http.HandleFunc("/collections/items/get", service.GetBookmarkItems)
 	http.HandleFunc("/collections/items/delete", service.DeleteBookmarkItem)
 	http.HandleFunc("/collections/item/add", service.AddBookmarkItem)
@@ -24,5 +22,9 @@ func main() {
 	http.HandleFunc("/collections/collection/delete", service.DelBookmarkCollection)
 	http.HandleFunc("/collections/collection/get", service.GetBookmarkCollections)
 
-	log.Fatal(http.ListenAndServe(":80", nil))
+	log.Fatal(http.ListenAndServe(":5050", nil))
+	var err error
+	if err = db.MongoClient.Disconnect(context.TODO()); err != nil {
+		panic(err)
+	}
 }
