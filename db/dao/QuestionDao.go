@@ -12,26 +12,36 @@ import (
 type QuestionInterfaceImpl struct {
 }
 
-func (impl *QuestionInterfaceImpl) AddQuestion(question *model.QuestionModel) error {
+func (impl *QuestionInterfaceImpl) UpsertQuestion(question *model.QuestionModel) error {
 	var collection = db.MongoClient.Database("interview_guide").Collection("question")
+	//filter := bson.M{"_id": 1}
+	//update := bson.M{"$set": }
+	filter := bson.M{"question_id": question.ID}
+	update := bson.D{
+		{"$set", bson.D{
+			{"title", question.Title},
+			{"content", question.Content},
+			{"details", question.Details},
+			{"author_id", question.AuthorID},
+			{"author_name", question.AuthorName},
+			{"avatar", question.Avatar},
+			{"likes", question.Likes},
+			{"views", question.Views},
+			{"tags", question.Tags},
+			{"class_id", question.ClassId},
+		}},
+	}
 
-	_, err := collection.InsertOne(context.TODO(), question)
-	return err
-}
-
-func (impl *QuestionInterfaceImpl) UpdateQuestion(question *model.QuestionModel) error {
-	var collection = db.MongoClient.Database("interview_guide").Collection("question")
-
-	filter := bson.M{"_id": question.ID}
-	update := bson.M{"$set": question}
-	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	// 设置 upsert 选项
+	opts := options.Update().SetUpsert(true)
+	_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
 	return err
 }
 
 func (impl *QuestionInterfaceImpl) GetQuestionById(id int) (model.QuestionModel, error) {
 	var collection = db.MongoClient.Database("interview_guide").Collection("question")
 
-	filter := bson.M{"_id": id}
+	filter := bson.M{"question_id": id}
 	var question model.QuestionModel
 	return question, collection.FindOne(context.TODO(), filter).Decode(&question)
 }
@@ -41,8 +51,8 @@ func (impl *QuestionInterfaceImpl) QueryQuestions(page int) ([]model.QuestionMod
 	if page == 0 {
 		page = 1
 	}
-	pageSize := 10                // 每页显示的条数
-	skip := (page - 1) * pageSize // 计算跳过的记录数
+	pageSize := 10
+	skip := (page - 1) * pageSize
 
 	// 查询数据
 	cur, err := collection.Find(context.TODO(), bson.M{}, options.Find().SetSkip(int64(skip)).SetLimit(int64(pageSize)))

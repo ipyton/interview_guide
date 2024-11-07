@@ -12,7 +12,7 @@ import (
 var bookmarkCollectionDAO dao.CollectionInterface = &dao.CollectionInterfaceImpl{}
 
 func GetBookmarkCollections(w http.ResponseWriter, r *http.Request) {
-	collections, err := bookmarkCollectionDAO.GetBookCollections()
+	collections, err := bookmarkCollectionDAO.GetCollections()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -23,13 +23,15 @@ func GetBookmarkCollections(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
-	collectionID := r.URL.Query().Get("collection_id")
-	num, err := strconv.Atoi(collectionID)
-	if err != nil {
+	// collectionID := r.URL.Query().Get("collection_id")
+	var err error
+	collectionID, err := strconv.Atoi(r.URL.Query().Get("collection_id"))
+	userId := r.URL.Query().Get("user_id")
+	if err != nil || userId == "" {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	items, err := bookmarkCollectionDAO.GetBookMarkItems(num)
+	items, err := bookmarkCollectionDAO.GetItemsInCollection(userId, collectionID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -40,8 +42,20 @@ func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteBookmarkItem(w http.ResponseWriter, r *http.Request) {
-	resourceID := r.URL.Query().Get("resource_id")
-	err := bookmarkCollectionDAO.DeleteBookMarkItem(resourceID)
+	userId := r.URL.Query().Get("user_id")
+	questionId, err := strconv.Atoi(r.URL.Query().Get("question_id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	collectionId, err := strconv.Atoi(r.URL.Query().Get("collection_id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = bookmarkCollectionDAO.DeleteBookMarkItem(userId, collectionId, questionId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -84,12 +98,13 @@ func AddBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 
 func DelBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 	collectionID := r.URL.Query().Get("collection_id")
+	userId := r.URL.Query().Get("user_id")
 	num, err := strconv.Atoi(collectionID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = bookmarkCollectionDAO.DeleteBookMarkCollection(num)
+	err = bookmarkCollectionDAO.DeleteBookMarkCollection(userId, num)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

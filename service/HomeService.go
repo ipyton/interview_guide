@@ -4,10 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
+
+type msg struct {
+	PageID string `json:"page_number"`
+	// Name string `json:"name"`
+}
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Hello World")
@@ -50,17 +56,19 @@ func GetQuestionsByPageHandler(w http.ResponseWriter, r *http.Request) {
 	res := &JsonResult{}
 	w.Header().Set("Content-Type", "application/json")
 
-	decoder := json.NewDecoder(r.Body)
-
-	body := make(map[string]interface{})
-
-	if err := decoder.Decode(&body); err != nil {
-		http.Error(w, "Failed to decode body", http.StatusBadRequest)
+	var page_number = 1
+	var err error
+	if r.URL.Query().Get("page_id") != "" {
+		page_number, err = strconv.Atoi(r.URL.Query().Get("page_id"))
 	}
-	posts, _ := questionImp.QueryQuestions(body["page_number"].(int))
+	if err != nil {
+		res.Code = -1
+		res.ErrorMsg = "Failed to get page number"
+	}
+	posts, _ := questionImp.QueryQuestions(page_number)
 	res.Code = 1
 	res.Data = posts
-	err := json.NewEncoder(w).Encode(res)
+	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
 		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
 		return

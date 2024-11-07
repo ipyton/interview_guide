@@ -13,14 +13,12 @@ const uri = "mongodb://localhost:27017"
 var MongoClient *mongo.Client
 
 func InitMongo() {
-	fmt.Println("asdasdasdasdasd")
 
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
 	// Create a new client and connect to the server
 	var err error
 	MongoClient, err = mongo.Connect(context.TODO(), opts)
-	fmt.Println("asdasdasdasdasd")
 	if err != nil {
 		panic(err)
 	}

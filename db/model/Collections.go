@@ -13,7 +13,7 @@ type BookmarkCollectionModel struct {
 type BookmarkItemModel struct {
 	CollectionID  int    `gorm:"column:collection_id" json:"collection_id" bson:"collection_id"`
 	ResourceID    int    `gorm:"column:resource_id" json:"resource_id" bson:"resource_id"`
-	Type          string `gorm:"column:type" json:"type" bson:"type"`
+	Type          string `gorm:"column:type" json:"type" bson:"type"` //question, post 两周类型
 	ResourceTitle string `gorm:"column:resource_title" json:"resource_title" bson:"resource_title"`
 	Content       string `gorm:"column:content" json:"content" bson:"content"`
 	Extra1        string `gorm:"column:extra1;omitempty" json:"extra1,omitempty" bson:"extra1,omitempty"` // 额外字段1
