@@ -2,17 +2,42 @@ package service
 
 import (
 	"encoding/json"
-	"strconv"
-
+	"fmt"
+	"io"
 	"net/http"
+	"strconv"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
 
-var bookmarkCollectionDAO dao.CollectionInterface = &dao.CollectionInterfaceImpl{}
+var bookmarkCollectionDAO dao.CollectionQuestionInterface = &dao.CollectionQuestionInterfaceImpl{}
+
+type CollectionRequest struct {
+	OpenID     string `json:"open_id"`
+	Category   string `json:"category"`
+	PageNumber int    `json:"page_number"`
+}
+
+func processGetItemsRequest(r *http.Request) (*CollectionRequest, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read request body")
+
+	}
+	defer r.Body.Close()
+
+	// 解析 JSON 到 CollectionRequest 结构体
+	var req CollectionRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		return nil, fmt.Errorf("Invalid JSON format")
+
+	}
+	return &req, nil
+}
 
 func GetBookmarkCollections(w http.ResponseWriter, r *http.Request) {
-	collections, err := bookmarkCollectionDAO.GetCollections()
+	openId := r.Header.Get("openid")
+	collections, err := bookmarkCollectionDAO.GetCollections(openId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -55,7 +80,7 @@ func DeleteBookmarkItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = bookmarkCollectionDAO.DeleteBookMarkItem(userId, collectionId, questionId)
+	err = bookmarkCollectionDAO.DeleteBookMarkQuestion(userId, collectionId, questionId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -65,13 +90,31 @@ func DeleteBookmarkItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddBookmarkItem(w http.ResponseWriter, r *http.Request) {
-	var item model.BookmarkItemModel
-	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	type BookmarkRequest struct {
+		OpenID       string `json:"open_id"`
+		CollectionID string `json:"collection_id"`
+		QuestionID   string `json:"question_id"`
+	}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	// 解析 JSON 到 BookmarkRequest 结构体
+	var req BookmarkRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
 
-	err := bookmarkCollectionDAO.AddBookMarkItem(&item)
+	// 验证参数
+	if req.OpenID == "" || req.CollectionID == "" || req.QuestionID == "" {
+		http.Error(w, "Missing or invalid parameters", http.StatusBadRequest)
+		return
+	}
+	err = bookmarkCollectionDAO.AddBookMarkQuestion(req.OpenID, req.CollectionID, req.QuestionID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -111,4 +154,31 @@ func DelBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent) // No content to return
+}
+
+func GetCollectionItemsByTime(w http.ResponseWriter, r *http.Request) {
+	req, err := processGetItemsRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// 验证参数
+	if req.OpenID == "" || req.Category == "" || req.PageNumber < 1 {
+		http.Error(w, "Missing or invalid parameters", http.StatusBadRequest)
+		return
+	}
+	items, err := bookmarkCollectionDAO.GetCollectionItemsByTime(req.OpenID, req.PageNumber)
+	marshal, err := json.Marshal(JsonResult{Code: 1, Data: *items})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(marshal)
+	w.WriteHeader(http.StatusOK)
+	// 输出解析结果（这里可以根据业务需求继续处理 req）
+}
+
+func GetCollectionItemsByCategory(w http.ResponseWriter, r *http.Request) {
+
 }

@@ -14,14 +14,15 @@ import (
 //
 //var Imp CounterInterface = &CounterInterfaceImp{}
 
-type CollectionInterface interface {
-	GetCollections() (*[]model.BookmarkCollectionModel, error)
-	GetItemsInCollection(userId string, questionId int) ([]*model.BookmarkItemModel, error)
-	DeleteBookMarkItem(userId string, collectionId int, questionId int) error
-	AddBookMarkItem(item *model.BookmarkItemModel) error
+type CollectionQuestionInterface interface {
+	GetCollections(openId string) (*[]model.BookmarkCollectionModel, error)
+	GetItemsInCollection(userId string, questionId int) ([]*model.BookmarkQuestionModel, error)
+	DeleteBookMarkQuestion(userId string, collectionId int, questionId int) error
+	AddBookMarkQuestion(openId string, collectionID string, questionId string) error
 	AddBookMarkCollection(collection *model.BookmarkCollectionModel) error
 	DeleteBookMarkCollection(userId string, collectionID int) error
 	IsResourceCollected(userId string, questionId int) (bool, error)
+	GetCollectionItemsByTime(openId string, pageNumber int) (*[]model.BookmarkQuestionModel, error)
 }
 
 type QuestionInterface interface {

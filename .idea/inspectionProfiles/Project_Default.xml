@@ -5,6 +5,9 @@
       <functions>
         <function importPath="wxcloudrun-golang/service" name="processClassInput" />
       </functions>
+      <methods>
+        <method importPath="wxcloudrun-golang/db/dao" receiver="CollectionQuestionInterface" name="GetCollectionItemsByTime" />
+      </methods>
     </inspection_tool>
   </profile>
 </component>
