@@ -32,12 +32,23 @@ type QuestionInterface interface {
 }
 
 type ClassInterface interface {
-	UpsertClass(classIds []string, class model.ClassModel) error
-	GetRootClasses() ([]model.ClassModel, error)
-	GetSubClasses(classIds []string, class model.ClassModel) (model.ClassModel, error)
-	DeleteClass(classIds []string) error
+	UpsertClass(class model.ClassModel) error
+	GetClasses(parentClassId int) ([]model.ClassModel, error)
+	DeleteClass(classId int) error
 }
 
 type CounterInterface interface {
 	GetAndIncrease(increaseDoc string) (int, error)
+}
+
+type UserInterface interface {
+	SaveLoginStatus(user model.User) error
+	DeleteLoginStatus(userCode string) error
+	UpdateUserInfo(user model.User) error
+	CancelRegistration(user model.User) error
+	IsUserExists(openid string) bool
+	ChangeMembershipStatus(openid string, status bool) error
+	AddPoints(openid string, points int) error
+	Registration(userStatus model.UserStatus, user model.User) error
+	UpsertLoginStatus(userStatus model.UserStatus, ip string) error
 }

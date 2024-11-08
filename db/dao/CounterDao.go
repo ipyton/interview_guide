@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,7 +24,7 @@ func (counterImpl CounterImpl) GetAndIncrease(collectionName string) (int, error
 
 	err := collection.FindOneAndUpdate(context.TODO(), filter, update, opts).Decode(&updatedDoc)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// Counter does not exist, initialize it
 			_, err := collection.InsertOne(context.TODO(), bson.M{"_id": collectionName, "seq": 1})
 			if err != nil {
