@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/service"
@@ -24,11 +25,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// 提取并验证令牌
 		token := strings.TrimPrefix(authHeader, "Bearer ")
-		if !impl.IsTokenValid(token, r.RequestURI) {
+		valid, err := impl.IsTokenValid(token, r.RequestURI)
+		r.Header.Set("openid", valid.Openid)
+		if err != nil && valid.ExpiresAt.Before(time.Now()) {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-
 		// 如果验证成功，调用下一个处理器
 		next.ServeHTTP(w, r)
 	})
@@ -57,14 +59,15 @@ func main() {
 	mux.Handle("/classes/get", AuthMiddleware(http.HandlerFunc(service.GetClassHandler)))
 	mux.Handle("/user/login", http.HandlerFunc(service.LoginHandler)) // 登录不需要身份验证
 	//mux.Handle("/user/validate", http.HandlerFunc(service.ValidateTokenHandler)) // 验证令牌不需要身份验证
-	mux.Handle("/user/logout", AuthMiddleware(http.HandlerFunc(service.LogoutHandler)))
+	mux.Handle("/user/get_info", AuthMiddleware(http.HandlerFunc(service.GetUserInfo)))
+	mux.Handle("/user/set_class", AuthMiddleware(http.HandlerFunc(service.SetClass)))
 
 	cors := handlers.CORS(handlers.AllowedOrigins([]string{"*"}),
 		handlers.AllowedMethods([]string{"get", "post", "put", "patch", "delete"}),
 		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}), // Add other headers as needed
 	)
 
-	log.Fatal(http.ListenAndServe(":5050", cors(http.DefaultServeMux)))
+	log.Fatal(http.ListenAndServe(":5050", cors(mux)))
 	var err error
 	if err = db.MongoClient.Disconnect(context.TODO()); err != nil {
 		panic(err)

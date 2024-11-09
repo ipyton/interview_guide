@@ -63,5 +63,4 @@ func GetQuestionsByIdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
 		return
 	}
-
 }

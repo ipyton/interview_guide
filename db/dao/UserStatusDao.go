@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -13,7 +14,14 @@ import (
 )
 
 type UserStatusDaoImpl struct {
-	UserInterface
+	UserStatusInterface
+}
+
+var jwtKey = []byte("your_secret_key") // 建议在配置文件或环境变量中管理密钥
+
+type Claims struct {
+	Openid string `json:"openid"`
+	jwt.RegisteredClaims
 }
 
 func (UserStatusDaoImpl) UpsertLoginStatus(userStatus model.UserStatus) error {
@@ -21,7 +29,7 @@ func (UserStatusDaoImpl) UpsertLoginStatus(userStatus model.UserStatus) error {
 	filter := bson.M{"openid": userStatus.OpenId}
 	update := bson.D{
 		{"$set", bson.D{
-			{"open_id", userStatus.OpenId},
+			{"openid", userStatus.OpenId},
 			{"third_session", userStatus.ThirdSession},
 			{"session_id", userStatus.SessionKey},
 			{"last_login", time.Now()},
@@ -40,13 +48,6 @@ func (UserStatusDaoImpl) LoginCount() {
 
 }
 
-func (UserStatusDaoImpl) ChangeMembershipStatus(openid string, status bool) error {
-	return nil
-}
-
-func (UserStatusDaoImpl) AddPoints(openid string, points int) error {
-	return nil
-}
 func (UserStatusDaoImpl) IsUserExists(openid string) bool {
 	one := db.MongoClient.Database("interview_guide").Collection("user_status").FindOne(context.TODO(), bson.M{"openid": openid})
 	if errors.Is(one.Err(), mongo.ErrNoDocuments) {
@@ -54,10 +55,27 @@ func (UserStatusDaoImpl) IsUserExists(openid string) bool {
 	}
 	return true
 }
-func (UserStatusDaoImpl) IsTokenValid(token string, requestPath string) bool {
-	fmt.Println(token)
-	fmt.Println(requestPath)
-	return true
+func verifyJWT(tokenStr string) (*Claims, error) {
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		return nil, err
+	}
+	return claims, nil
+}
+
+func (UserStatusDaoImpl) IsTokenValid(token string, requestPath string) (*Claims, error) {
+	var canVisit = false
+	if len(requestPath) != 0 {
+		canVisit = true
+	}
+	if !canVisit {
+		return nil, fmt.Errorf("Do not have access")
+	}
+	return verifyJWT(token)
 }
 
 func (UserStatusDaoImpl) Registration(userStatus model.UserStatus, user model.User) error {
@@ -88,22 +106,6 @@ func (UserStatusDaoImpl) Registration(userStatus model.UserStatus, user model.Us
 	if err != nil {
 		return err
 	}
-	return err
-}
-
-func (UserStatusDaoImpl) UpdateUserInfo(user model.User) error {
-	opts := options.Update().SetUpsert(true)
-	filter := bson.M{"openid": user.OpenId}
-	update := bson.D{
-		{"$set", bson.D{
-			{"open_id", user.OpenId},
-			{"username", user.Username},
-			{"avatar_url", user.AvatarURL},
-			{"email", user.Email},
-			{"phone_number", user.PhoneNumber},
-		}},
-	}
-	_, err := db.MongoClient.Database("interview_guide").Collection("user_status").UpdateOne(context.TODO(), filter, update, opts)
 	return err
 }
 

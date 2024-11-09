@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
@@ -32,6 +33,9 @@ func processClassInput(r *http.Request) (ClassRequest, error) {
 }
 
 func UpsertClassHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Only Delete method is allowed", http.StatusMethodNotAllowed)
+	}
 	input, err := processClassInput(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -44,12 +48,20 @@ func UpsertClassHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteClassHandler(w http.ResponseWriter, r *http.Request) {
-	input, err := processClassInput(r)
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Only Delete method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var parentClassId = -1
+	var err error
+	if r.URL.Query().Get("parent_class_id") != "" {
+		parentClassId, err = strconv.Atoi(r.URL.Query().Get("parent_class_id"))
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = dao.ClassInterfaceImpl{}.DeleteClass(input.ClassId)
+	err = dao.ClassInterfaceImpl{}.DeleteClass(parentClassId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -58,13 +70,20 @@ func DeleteClassHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetClassHandler(w http.ResponseWriter, r *http.Request) {
-	input, err := processClassInput(r)
+	if r.Method != http.MethodGet {
+		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var parentClassId = -1
+	var err error
+	if r.URL.Query().Get("parent_class_id") != "" {
+		parentClassId, err = strconv.Atoi(r.URL.Query().Get("parent_class_id"))
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	println(input.ParentClassId)
-	classes, err := dao.ClassInterfaceImpl{}.GetClasses(input.ParentClassId)
+	classes, err := dao.ClassInterfaceImpl{}.GetClasses(parentClassId)
 	w.Header().Set("Content-Type", "application/json")
 	classesJson, err := json.Marshal(classes)
 	if err != nil {

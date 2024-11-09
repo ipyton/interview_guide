@@ -42,14 +42,17 @@ type CounterInterface interface {
 	GetAndIncrease(increaseDoc string) (int, error)
 }
 
-type UserInterface interface {
+type UserStatusInterface interface {
 	SaveLoginStatus(user model.User) error
 	DeleteLoginStatus(userCode string) error
-	UpdateUserInfo(user model.User) error
 	CancelRegistration(user model.User) error
 	IsUserExists(openid string) bool
-	ChangeMembershipStatus(openid string, status bool) error
-	AddPoints(openid string, points int) error
 	Registration(userStatus model.UserStatus, user model.User) error
 	UpsertLoginStatus(userStatus model.UserStatus, ip string) error
+}
+type UserInformationInterface interface {
+	UpdateUserInfo(user model.User) error
+	ChangeMembershipStatus(openid string, status bool) error
+	AddPoints(openid string, points int) error
+	UpdateUserClass(openid string, classId int, className string) error
 }

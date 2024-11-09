@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"io"
 	"math/big"
 	r "math/rand"
@@ -93,6 +94,21 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+var jwtKey = []byte("your_secret_key") // 建议在配置文件或环境变量中管理密钥
+
+func generateJWT(openid string) (string, error) {
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := &dao.Claims{
+		Openid: openid,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtKey)
+}
+
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	defer r.Body.Close()
@@ -148,7 +164,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	randomString, err := generateRandomString(30)
+	randomString, err := generateJWT(response.OpenID)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Failed to generate random string", http.StatusInternalServerError)
