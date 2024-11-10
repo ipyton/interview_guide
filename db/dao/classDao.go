@@ -39,7 +39,7 @@ func (classInterfaceImpl ClassInterfaceImpl) UpsertClass(class model.ClassModel)
 
 }
 
-func (classInterfaceImpl ClassInterfaceImpl) GetClasses(parentClassId int) ([]model.ClassModel, error) {
+func (classInterfaceImpl ClassInterfaceImpl) GetClasses(parentClassId int64) ([]model.ClassModel, error) {
 	var collection = db.MongoClient.Database("interview_guide").Collection("classes")
 	var err error
 	var result []model.ClassModel
@@ -49,11 +49,11 @@ func (classInterfaceImpl ClassInterfaceImpl) GetClasses(parentClassId int) ([]mo
 		log.Fatal(err.Error())
 	}
 	for _, class := range result {
-		fmt.Printf("Name: %s, Email: %s\n", class.ClassId, class.ClassName)
+		fmt.Printf("Name: %s, ClassName: %s\n", class.ClassId, class.ClassName)
 	}
 	return result, err
 }
-func (classInterfaceImpl ClassInterfaceImpl) DeleteClass(classId int) error {
+func (classInterfaceImpl ClassInterfaceImpl) DeleteClass(classId int64) error {
 	var collection = db.MongoClient.Database("interview_guide").Collection("classes")
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"class_id": classId})
 	if err != nil {

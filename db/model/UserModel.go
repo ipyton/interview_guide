@@ -12,9 +12,9 @@ type User struct {
 	RegisterDate time.Time `json:"register_date" bson:"register_date"` // 注册日期
 	// 账户信息
 	MembershipStatus string `json:"membership_status" bson:"membership_status"` // 会员状态
-	Points           int    `json:"points" bson:"points"`                       // 积分
-	ContinuousLogin  int    `json:"continuous_login" bson:"continuous_login"`   // 连续登录
-	ClassId          int    `json:"class_id" bson:"class_id"`
+	Points           int64  `json:"points" bson:"points"`                       // 积分
+	ContinuousLogin  int64  `json:"continuous_login" bson:"continuous_login"`   // 连续登录
+	ClassId          int64  `json:"class_id" bson:"class_id"`
 	ClassName        string `json:"class_name" bson:"class_name"`
 }
 

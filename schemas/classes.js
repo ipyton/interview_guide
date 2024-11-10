@@ -496,18 +496,22 @@ categories = [{
     }]
 }
 ]
-
+let id = 0
 function traverse(root) {
     let father_node
     let queue = []
     let result = []
-    result.push({ parent_class_id: -1, class_name: root.name,  class_id: parseInt(root.code)})
+    result.push({ parent_class_id: -1, class_name: root.name,  class_id: id, isLeaf: !root.child})
+    root.class_id = id
+    id ++
     queue.push(root)
     while (queue.length !== 0) {
         let father_node = queue.shift()
         if (father_node.child) {
             father_node.child.forEach(element => {
-                result.push({ parent_class_id: parseInt(father_node.code), class_id: parseInt(element.code), class_name: element.name })
+                result.push({ parent_class_id: father_node.class_id, class_id: id, class_name: element.name, isLeaf: !element.child})
+                element.class_id = id
+                id ++
                 queue.push(element)
             })
         }

@@ -15,7 +15,7 @@ var bookmarkCollectionDAO dao.CollectionQuestionInterface = &dao.CollectionQuest
 type CollectionRequest struct {
 	OpenID     string `json:"open_id"`
 	Category   string `json:"category"`
-	PageNumber int    `json:"page_number"`
+	PageNumber int64  `json:"page_number"`
 }
 
 func processGetItemsRequest(r *http.Request) (*CollectionRequest, error) {
@@ -56,7 +56,7 @@ func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	items, err := bookmarkCollectionDAO.GetItemsInCollection(userId, collectionID)
+	items, err := bookmarkCollectionDAO.GetItemsInCollection(userId, int64(collectionID))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -68,13 +68,15 @@ func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
 
 func DeleteBookmarkItem(w http.ResponseWriter, r *http.Request) {
 	userId := r.URL.Query().Get("user_id")
-	questionId, err := strconv.Atoi(r.URL.Query().Get("question_id"))
+	questionId, err := strconv.ParseInt(r.URL.Query().Get("question_id"), 10, 64)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	collectionId, err := strconv.Atoi(r.URL.Query().Get("collection_id"))
+	collectionId, err := strconv.ParseInt(r.URL.Query().Get("collection_id"), 10, 64)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -125,13 +127,17 @@ func AddBookmarkItem(w http.ResponseWriter, r *http.Request) {
 
 func AddBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 	var collection model.BookmarkCollectionModel
+	println(r.Body)
 	if err := json.NewDecoder(r.Body).Decode(&collection); err != nil {
+		fmt.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	err := bookmarkCollectionDAO.AddBookMarkCollection(&collection)
+	fmt.Println(collection.CollectionName)
+	collection.OpenId = r.Header.Get("openid")
+	err := bookmarkCollectionDAO.AddQuestionCollection(&collection)
 	if err != nil {
+		fmt.Println("adasdasdasd")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -142,7 +148,7 @@ func AddBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 func DelBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 	collectionID := r.URL.Query().Get("collection_id")
 	userId := r.URL.Query().Get("user_id")
-	num, err := strconv.Atoi(collectionID)
+	num, err := strconv.ParseInt(collectionID, 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

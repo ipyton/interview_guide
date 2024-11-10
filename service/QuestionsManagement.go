@@ -3,8 +3,10 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
+	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
 )
 
@@ -53,7 +55,7 @@ func GetQuestionsByIdHandler(w http.ResponseWriter, r *http.Request) {
 		res.Code = -1
 		res.ErrorMsg = "Invalid question id"
 	} else {
-		posts, _ := questionImp.GetQuestionById(question_id)
+		posts, _ := questionImp.GetQuestionById(int64(question_id))
 		res.Code = 1
 		res.Data = posts
 	}
@@ -63,4 +65,57 @@ func GetQuestionsByIdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
 		return
 	}
+}
+
+func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
+	// 解析 multipart 表单数据，限制最大上传文件大小
+	err := r.ParseMultipartForm(10 << 20) // 限制为 10 MB
+	if err != nil {
+		http.Error(w, "File too large", http.StatusBadRequest)
+		return
+	}
+
+	// 获取上传的文件
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Error retrieving the file", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// 读取文件内容到内存中
+	fileContents, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "Error reading the file", http.StatusInternalServerError)
+		return
+	}
+	type QuestionRequest struct {
+		Question string   `json:"question"`
+		Answer   string   `json:"answer"`
+		Tags     []string `json:"tags"`
+		ClassId  int64    `json:"class_id"`
+	}
+	// 解析 JSON 文件内容到切片
+	var dataList []QuestionRequest
+	err = json.Unmarshal(fileContents, &dataList)
+	if err != nil {
+		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
+		return
+	}
+	var list []model.QuestionModel
+	for _, data := range dataList {
+		increase, err := dao.CounterImpl{}.GetAndIncrease("questions")
+		if err != nil {
+			http.Error(w, "Error increasing questions", http.StatusInternalServerError)
+			return
+		}
+		list = append(list, model.QuestionModel{ID: increase, Title: data.Question, Tags: data.Tags, Details: data.Answer, Content: data.Answer[0:20], ClassId: data.ClassId})
+	}
+	err = questionImp.BatchAdd(&list)
+	if err != nil {
+		print(err.Error())
+		http.Error(w, "Error adding questions", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

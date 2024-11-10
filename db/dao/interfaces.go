@@ -16,30 +16,31 @@ import (
 
 type CollectionQuestionInterface interface {
 	GetCollections(openId string) (*[]model.BookmarkCollectionModel, error)
-	GetItemsInCollection(userId string, questionId int) ([]*model.BookmarkQuestionModel, error)
-	DeleteBookMarkQuestion(userId string, collectionId int, questionId int) error
+	GetItemsInCollection(openid string, questionId int64) ([]*model.BookmarkQuestionModel, error)
+	DeleteBookMarkQuestion(openid string, collectionId int64, questionId int64) error
 	AddBookMarkQuestion(openId string, collectionID string, questionId string) error
-	AddBookMarkCollection(collection *model.BookmarkCollectionModel) error
-	DeleteBookMarkCollection(userId string, collectionID int) error
-	IsResourceCollected(userId string, questionId int) (bool, error)
-	GetCollectionItemsByTime(openId string, pageNumber int) (*[]model.BookmarkQuestionModel, error)
+	AddQuestionCollection(collection *model.BookmarkCollectionModel) error
+	DeleteBookMarkCollection(openid string, collectionID int64) error
+	IsResourceCollected(openid string, questionId int64) (bool, error)
+	GetCollectionItemsByTime(openId string, pageNumber int64) (*[]model.BookmarkQuestionModel, error)
 }
 
 type QuestionInterface interface {
 	UpsertQuestion(question *model.QuestionModel) error // Add a new question
-	DelQuestion(id int) error                           // Delete a question by ID
-	GetQuestionById(id int) (model.QuestionModel, error)
-	QueryQuestions(page int) ([]model.QuestionModel, error)
+	DelQuestion(id int64) error                         // Delete a question by ID
+	GetQuestionById(id int64) (model.QuestionModel, error)
+	QueryQuestions(page int64) ([]model.QuestionModel, error)
+	BatchAdd(questions *[]model.QuestionModel) error
 }
 
 type ClassInterface interface {
 	UpsertClass(class model.ClassModel) error
-	GetClasses(parentClassId int) ([]model.ClassModel, error)
-	DeleteClass(classId int) error
+	GetClasses(parentClassId int64) ([]model.ClassModel, error)
+	DeleteClass(classId int64) error
 }
 
 type CounterInterface interface {
-	GetAndIncrease(increaseDoc string) (int, error)
+	GetAndIncrease(increaseDoc string) (int64, error)
 }
 
 type UserStatusInterface interface {
@@ -53,6 +54,6 @@ type UserStatusInterface interface {
 type UserInformationInterface interface {
 	UpdateUserInfo(user model.User) error
 	ChangeMembershipStatus(openid string, status bool) error
-	AddPoints(openid string, points int) error
-	UpdateUserClass(openid string, classId int, className string) error
+	AddPoints(openid string, points int64) error
+	UpdateUserClass(openid string, classId int64, className string) error
 }

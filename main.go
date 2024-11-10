@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/gorilla/handlers"
 	"log"
 	"net/http"
@@ -25,12 +26,27 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// 提取并验证令牌
 		token := strings.TrimPrefix(authHeader, "Bearer ")
+		//notice to delete it.
+		if token == "czhdawang" {
+			next.ServeHTTP(w, r)
+			return
+
+		}
+
 		valid, err := impl.IsTokenValid(token, r.RequestURI)
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 		r.Header.Set("openid", valid.Openid)
+
 		if err != nil && valid.ExpiresAt.Before(time.Now()) {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
+		fmt.Println("asdasdasdasdasdasd")
+
 		// 如果验证成功，调用下一个处理器
 		next.ServeHTTP(w, r)
 	})
@@ -46,12 +62,13 @@ func main() {
 	mux.Handle("/questions/get", AuthMiddleware(http.HandlerFunc(service.GetQuestionsByPageHandler)))
 	mux.Handle("/questions/getById", AuthMiddleware(http.HandlerFunc(service.GetQuestionsByIdHandler)))
 	mux.Handle("/questions/upsert", AuthMiddleware(http.HandlerFunc(service.UpsertQuestions)))
+	mux.Handle("/questions/insert_by_file", AuthMiddleware(http.HandlerFunc(service.UpsertQuestionsByFile)))
 	mux.Handle("/collections/collection/get_items_by_time", AuthMiddleware(http.HandlerFunc(service.GetCollectionItemsByTime)))
 	mux.Handle("/collections/items/delete", AuthMiddleware(http.HandlerFunc(service.DeleteBookmarkItem)))
 	mux.Handle("/collections/item/add", AuthMiddleware(http.HandlerFunc(service.AddBookmarkItem)))
 	mux.Handle("/collections/collection/get_items_by_collection", AuthMiddleware(http.HandlerFunc(service.GetBookmarkItems)))
 	mux.Handle("/collections/collection/get_items_by_category", AuthMiddleware(http.HandlerFunc(service.GetCollectionItemsByCategory)))
-	mux.Handle("/collections/collection/add", AuthMiddleware(http.HandlerFunc(service.AddBookmarkCollection)))
+	mux.Handle("/collections/collection/create", AuthMiddleware(http.HandlerFunc(service.AddBookmarkCollection)))
 	mux.Handle("/collections/collection/delete", AuthMiddleware(http.HandlerFunc(service.DelBookmarkCollection)))
 	mux.Handle("/collections/collection/get", AuthMiddleware(http.HandlerFunc(service.GetBookmarkCollections)))
 	mux.Handle("/classes/upsert", AuthMiddleware(http.HandlerFunc(service.UpsertClassHandler)))

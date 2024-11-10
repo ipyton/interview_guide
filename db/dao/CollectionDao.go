@@ -19,7 +19,7 @@ type CollectionQuestionInterfaceImpl struct {
 
 //var Imp CounterInterface = &CounterInterfaceImp{}
 
-func (dao *CollectionQuestionInterfaceImpl) IsResourceCollected(userId string, resourceId int) (bool, error) {
+func (dao *CollectionQuestionInterfaceImpl) IsResourceCollected(userId string, resourceId int64) (bool, error) {
 	return true, errors.New("not implement")
 }
 
@@ -27,7 +27,7 @@ func (dao *CollectionQuestionInterfaceImpl) GetCollections(openId string) (*[]mo
 	collection := db.MongoClient.Database("interview_guide").Collection("collections")
 
 	// 定义查询过滤器
-	filter := bson.M{"openId": openId}
+	filter := bson.M{"openid": openId}
 
 	// 执行查询
 	cursor, err := collection.Find(context.TODO(), filter)
@@ -52,7 +52,7 @@ func (dao *CollectionQuestionInterfaceImpl) GetCollections(openId string) (*[]mo
 	return &results, nil
 }
 
-func (dao *CollectionQuestionInterfaceImpl) GetItemsInCollection(openId string, collectionID int) ([]*model.BookmarkQuestionModel, error) {
+func (dao *CollectionQuestionInterfaceImpl) GetItemsInCollection(openId string, collectionID int64) ([]*model.BookmarkQuestionModel, error) {
 	var items []*model.BookmarkQuestionModel
 
 	collection := db.MongoClient.Database("interview_guide").Collection("collection_items")
@@ -86,7 +86,7 @@ func (dao *CollectionQuestionInterfaceImpl) GetItemsInCollection(openId string, 
 	return items, nil
 }
 
-func (dao *CollectionQuestionInterfaceImpl) DeleteBookMarkQuestion(userId string, collectionId int, questionId int) error {
+func (dao *CollectionQuestionInterfaceImpl) DeleteBookMarkQuestion(userId string, collectionId int64, questionId int64) error {
 	// 获取 MongoDB 客户端连接
 
 	// 选择特定的数据库和集合
@@ -148,29 +148,40 @@ func (dao *CollectionQuestionInterfaceImpl) AddBookMarkQuestion(openId string, c
 	return nil
 }
 
-func (dao *CollectionQuestionInterfaceImpl) AddQuestionCollection(userId string, collection *model.BookmarkCollectionModel) error {
-	collections := db.MongoClient.Database("interview_guide").Collection("collection")
+func (dao *CollectionQuestionInterfaceImpl) AddQuestionCollection(collection *model.BookmarkCollectionModel) error {
+	print("ooxx")
+
+	collections := db.MongoClient.Database("interview_guide").Collection("collections")
+	impl := CounterImpl{}
+	print("ooxx")
+	id, err2 := impl.GetAndIncrease("collections")
+	fmt.Println(id)
+	if err2 != nil {
+		print(err2.Error())
+		return err2
+	}
+	print("ooxx")
 
 	// 创建插入文档的数据
 	document := bson.M{
-		"user_id":       userId,                    // 用户 ID
-		"collection_id": collection.CollectionID,   // 集合 ID
-		"name":          collection.CollectionName, // 集合名称
-		"description":   collection.Description,    // 集合描述
-		"created_at":    collection.CreateAt,       // 创建时间
-		"updated_at":    collection.UpdateAt,       // 更新时间
+		"openid":          collection.OpenId,         // 用户 ID
+		"collection_id":   id,                        // 集合 ID
+		"collection_name": collection.CollectionName, // 集合名称
+		"description":     "",                        // 集合描述
+		"created_at":      time.Now(),                // 创建时间
 	}
 
 	// 执行插入操作
 	_, err := collections.InsertOne(context.TODO(), document)
 	if err != nil {
-		return fmt.Errorf("failed to insert bookmark collection: %v", err)
+		print(err.Error())
+		return err
 	}
 
 	return nil
 }
 
-func (dao *CollectionQuestionInterfaceImpl) DeleteBookMarkCollection(userID string, collectionID int) error {
+func (dao *CollectionQuestionInterfaceImpl) DeleteBookMarkCollection(userID string, collectionID int64) error {
 	collection := db.MongoClient.Database("interview_guide").Collection("collections")
 
 	// 创建删除条件
@@ -192,7 +203,7 @@ func (dao *CollectionQuestionInterfaceImpl) DeleteBookMarkCollection(userID stri
 
 	return nil
 }
-func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByTime(openId string, pageNumber int) (*[]model.BookmarkQuestionModel, error) {
+func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByTime(openId string, pageNumber int64) (*[]model.BookmarkQuestionModel, error) {
 	const pageSize = 10
 
 	// 获取 MongoDB 客户端连接
@@ -235,7 +246,7 @@ func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByTime(openId stri
 	return &items, nil
 }
 
-func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByCategory(openId string, category string, pageNumber int) (*[]model.BookmarkQuestionModel, error) {
+func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByCategory(openId string, category string, pageNumber int64) (*[]model.BookmarkQuestionModel, error) {
 	// 每页的项目数量
 	const pageSize = 10
 

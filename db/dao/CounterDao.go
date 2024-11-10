@@ -15,7 +15,7 @@ type CounterImpl struct {
 	CounterInterface
 }
 
-func (counterImpl CounterImpl) GetAndIncrease(collectionName string) (int, error) {
+func (counterImpl CounterImpl) GetAndIncrease(collectionName string) (int64, error) {
 	collection := db.MongoClient.Database("interview_guide").Collection("counters")
 	filter := bson.M{"_id": collectionName}
 	update := bson.M{"$inc": bson.M{"value": 1}}
@@ -26,7 +26,7 @@ func (counterImpl CounterImpl) GetAndIncrease(collectionName string) (int, error
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			// Counter does not exist, initialize it
-			_, err := collection.InsertOne(context.TODO(), bson.M{"_id": collectionName, "seq": 1})
+			_, err := collection.InsertOne(context.TODO(), bson.M{"_id": collectionName, "value": 1})
 			if err != nil {
 				return 0, fmt.Errorf("failed to initialize counter: %v", err)
 			}
@@ -35,5 +35,5 @@ func (counterImpl CounterImpl) GetAndIncrease(collectionName string) (int, error
 		return 0, fmt.Errorf("failed to update counter: %v", err)
 	}
 
-	return updatedDoc.Count, nil
+	return updatedDoc.Value, nil
 }

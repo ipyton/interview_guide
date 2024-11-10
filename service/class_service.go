@@ -52,10 +52,11 @@ func DeleteClassHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only Delete method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	var parentClassId = -1
+	var parentClassId = int64(-1)
 	var err error
 	if r.URL.Query().Get("parent_class_id") != "" {
-		parentClassId, err = strconv.Atoi(r.URL.Query().Get("parent_class_id"))
+
+		parentClassId, err = strconv.ParseInt(r.URL.Query().Get("parent_class_id"), 10, 64)
 	}
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -74,10 +75,10 @@ func GetClassHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	var parentClassId = -1
+	var parentClassId = int64(-1)
 	var err error
 	if r.URL.Query().Get("parent_class_id") != "" {
-		parentClassId, err = strconv.Atoi(r.URL.Query().Get("parent_class_id"))
+		parentClassId, err = strconv.ParseInt(r.URL.Query().Get("parent_class_id"), 10, 64)
 	}
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

@@ -25,12 +25,12 @@ func generateHotPosts() []model.HotPost {
 	var posts []model.HotPost
 	for i := 1; i <= 10; i++ {
 		post := model.HotPost{
-			InfoID:      i,
-			QuestionID:  1000 + i,
+			InfoID:      int64(i),
+			QuestionID:  int64(1000 + i),
 			Intro:       fmt.Sprintf("This is an introduction for post %d", i),
-			AuthorID:    200 + i,
+			AuthorID:    int64(200 + i),
 			Title:       fmt.Sprintf("Hot Post Title %d", i),
-			Likes:       100 * i,
+			Likes:       int64(100 * i),
 			PublishDate: time.Now().AddDate(0, 0, -i), // 发布日期是最近的 10 天
 			Extra1:      fmt.Sprintf("Extra field 1 for post %d", i),
 			Extra2:      fmt.Sprintf("Extra field 2 for post %d", i),
@@ -65,7 +65,7 @@ func GetQuestionsByPageHandler(w http.ResponseWriter, r *http.Request) {
 		res.Code = -1
 		res.ErrorMsg = "Failed to get page number"
 	}
-	posts, _ := questionImp.QueryQuestions(page_number)
+	posts, _ := questionImp.QueryQuestions(int64(page_number))
 	res.Code = 1
 	res.Data = posts
 	err = json.NewEncoder(w).Encode(res)
