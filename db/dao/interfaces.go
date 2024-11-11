@@ -16,9 +16,9 @@ import (
 
 type CollectionQuestionInterface interface {
 	GetCollections(openId string) (*[]model.BookmarkCollectionModel, error)
-	GetItemsInCollection(openid string, questionId int64) ([]*model.BookmarkQuestionModel, error)
+	GetItemsInCollection(openid string, collectionId int64) (*[]model.BookmarkQuestionModel, error)
 	DeleteBookMarkQuestion(openid string, collectionId int64, questionId int64) error
-	AddBookMarkQuestion(openId string, collectionID string, questionId string) error
+	AddBookMarkQuestion(openId string, collectionID int64, questionId int64) error
 	AddQuestionCollection(collection *model.BookmarkCollectionModel) error
 	DeleteBookMarkCollection(openid string, collectionID int64) error
 	IsResourceCollected(openid string, questionId int64) (bool, error)
@@ -31,12 +31,15 @@ type QuestionInterface interface {
 	GetQuestionById(id int64) (model.QuestionModel, error)
 	QueryQuestions(page int64) ([]model.QuestionModel, error)
 	BatchAdd(questions *[]model.QuestionModel) error
+	GetQuestionsById(lastId int64) (*[]model.QuestionModel, error)
 }
 
 type ClassInterface interface {
-	UpsertClass(class model.ClassModel) error
+	UpdateClass(class model.ClassModel) error
+	InsertClass(class model.ClassModel) error
 	GetClasses(parentClassId int64) ([]model.ClassModel, error)
 	DeleteClass(classId int64) error
+	GetQuestionsById(lastId int64) (*[]model.QuestionModel, error)
 }
 
 type CounterInterface interface {

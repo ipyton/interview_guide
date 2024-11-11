@@ -22,6 +22,7 @@ func (impl *QuestionInterfaceImpl) BatchAdd(questions *[]model.QuestionModel) er
 	_, err := collection.InsertMany(context.TODO(), documents)
 	return err
 }
+
 func (impl *QuestionInterfaceImpl) UpsertQuestion(question *model.QuestionModel) error {
 	var collection = db.MongoClient.Database("interview_guide").Collection("question")
 
@@ -66,6 +67,48 @@ func (impl *QuestionInterfaceImpl) GetQuestionById(id int64) (model.QuestionMode
 	var question model.QuestionModel
 	return question, collection.FindOne(context.TODO(), filter).Decode(&question)
 }
+
+func (impl *QuestionInterfaceImpl) GetQuestionsById(lastId int64) (*[]model.QuestionModel, error) {
+	// 使用 question_id 字段作为分页游标
+	limit := 10
+	var collection = db.MongoClient.Database("interview_guide").Collection("question")
+
+	filter := bson.M{
+		"question_id": bson.M{"$gt": lastId}, // 查询 question_id 大于上一页的最后一个 question_id
+	}
+	projection := bson.M{
+		"question_id": 1, // 1表示包含字段
+		"title":       1, // 1表示包含字段
+		"content":     1, // 0表示排除字段（如果不需要_id字段）
+	}
+	findOptions := options.Find().SetProjection(projection)
+	findOptions.SetSort(bson.D{{"question_id", 1}}) // 按 question_id 升序排序
+	findOptions.SetLimit(int64(limit))
+
+	// 执行查询
+	cursor, err := collection.Find(context.TODO(), filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	// 解析查询结果
+	var questions []model.QuestionModel
+	for cursor.Next(context.TODO()) {
+		var question model.QuestionModel
+		if err := cursor.Decode(&question); err != nil {
+			return nil, err
+		}
+		questions = append(questions, question)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	return &questions, nil
+}
+
 func (impl *QuestionInterfaceImpl) QueryQuestions(page int64) ([]model.QuestionModel, error) {
 	var collection = db.MongoClient.Database("interview_guide").Collection("question")
 

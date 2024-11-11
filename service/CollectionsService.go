@@ -51,19 +51,23 @@ func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
 	// collectionID := r.URL.Query().Get("collection_id")
 	var err error
 	collectionID, err := strconv.Atoi(r.URL.Query().Get("collection_id"))
-	userId := r.URL.Query().Get("user_id")
-	if err != nil || userId == "" {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	openid := r.Header.Get("openid")
+	if openid == "" {
+		http.Error(w, "openid required", http.StatusBadRequest)
+	}
+	if err != nil {
+		http.Error(w, "Error request", http.StatusBadRequest)
 		return
 	}
-	items, err := bookmarkCollectionDAO.GetItemsInCollection(userId, int64(collectionID))
+	items, err := bookmarkCollectionDAO.GetItemsInCollection(openid, int64(collectionID))
+	fmt.Println(items)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
+	json.NewEncoder(w).Encode(*items)
+
 }
 
 func DeleteBookmarkItem(w http.ResponseWriter, r *http.Request) {
@@ -94,8 +98,8 @@ func DeleteBookmarkItem(w http.ResponseWriter, r *http.Request) {
 func AddBookmarkItem(w http.ResponseWriter, r *http.Request) {
 	type BookmarkRequest struct {
 		OpenID       string `json:"open_id"`
-		CollectionID string `json:"collection_id"`
-		QuestionID   string `json:"question_id"`
+		CollectionID int64  `json:"collection_id"`
+		QuestionID   int64  `json:"question_id"`
 	}
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -110,9 +114,9 @@ func AddBookmarkItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
-
+	req.OpenID = r.Header.Get("openid")
 	// 验证参数
-	if req.OpenID == "" || req.CollectionID == "" || req.QuestionID == "" {
+	if req.OpenID == "" {
 		http.Error(w, "Missing or invalid parameters", http.StatusBadRequest)
 		return
 	}

@@ -16,10 +16,10 @@ type BookmarkCollectionModel struct {
 
 type BookmarkQuestionModel struct {
 	CollectionID int64     `gorm:"column:collection_id" json:"collection_id" bson:"collection_id"`
-	QuestionId   int64     `gorm:"column:resource_id" json:"resource_id" bson:"resource_id"`
-	Title        string    `gorm:"column:type" json:"type" bson:"type"` //question, post 两周类型
-	Introduction string    `gorm:"column:resource_title" json:"resource_title" bson:"resource_title"`
-	AddTime      time.Time `gorm:"column:add_time" json:"add_time" bson:"add_time"`
+	QuestionId   int64     `gorm:"column:question_id" json:"question_id" bson:"question_id"`
+	Title        string    `gorm:"column:title" json:"title" bson:"title"` //question, post 两周类型
+	Content      string    `gorm:"column:content" json:"content" bson:"content"`
+	CreateAt     time.Time `gorm:"column:created_at" json:"created_at" bson:"created_at"`
 	Extra1       string    `gorm:"column:extra1;omitempty" json:"extra1,omitempty" bson:"extra1,omitempty"` // 额外字段1
 	Extra2       string    `gorm:"column:extra2;omitempty" json:"extra2,omitempty" bson:"extra2,omitempty"` // 额外字段2
 	Extra3       string    `gorm:"column:extra3;omitempty" json:"extra3,omitempty" bson:"extra3,omitempty"` // 额外字段3

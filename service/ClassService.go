@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -9,60 +10,68 @@ import (
 	"wxcloudrun-golang/db/model"
 )
 
-type ClassRequest struct {
-	ParentClassId int              `json:"parent_class_id,omitempty"`
-	ClassId       int              `json:"class_id,omitempty"`
-	Class         model.ClassModel `json:"class,omitempty"`
-}
-
 var classDao dao.ClassInterface = dao.ClassInterfaceImpl{}
 
-func processClassInput(r *http.Request) (ClassRequest, error) {
+func processClassInput(r *http.Request) (model.ClassModel, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return ClassRequest{}, err
+		return model.ClassModel{}, err
 	}
 	defer r.Body.Close()
-	var requestParsed ClassRequest
+	var requestParsed model.ClassModel
 	err = json.Unmarshal(body, &requestParsed)
 	if err != nil {
-		return ClassRequest{}, err
+		return model.ClassModel{}, err
 	}
 	return requestParsed, nil
 
 }
 
-func UpsertClassHandler(w http.ResponseWriter, r *http.Request) {
+func InsertClassHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, "Only Delete method is allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Only Post method is allowed", http.StatusMethodNotAllowed)
 	}
 	input, err := processClassInput(r)
 	if err != nil {
+		fmt.Println(err)
+
 		w.WriteHeader(http.StatusBadRequest)
 	}
-	err = dao.ClassInterfaceImpl{}.UpsertClass(input.Class)
+	err = classDao.InsertClass(input)
 	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func UpdateClassHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Only Post method is allowed", http.StatusMethodNotAllowed)
+	}
+	input, err := processClassInput(r)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	err = classDao.UpdateClass(input)
+	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
 func DeleteClassHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Only Delete method is allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	var parentClassId = int64(-1)
 	var err error
-	if r.URL.Query().Get("parent_class_id") != "" {
+	input, err := processClassInput(r)
 
-		parentClassId, err = strconv.ParseInt(r.URL.Query().Get("parent_class_id"), 10, 64)
-	}
 	if err != nil {
+		fmt.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = dao.ClassInterfaceImpl{}.DeleteClass(parentClassId)
+	err = dao.ClassInterfaceImpl{}.DeleteClass(input.ClassId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

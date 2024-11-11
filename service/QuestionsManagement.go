@@ -37,7 +37,7 @@ func UpsertQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetQuestionsByIdHandler(w http.ResponseWriter, r *http.Request) {
+func GetQuestionByIdHandler(w http.ResponseWriter, r *http.Request) {
 	res := &JsonResult{}
 	w.Header().Set("Content-Type", "application/json")
 
@@ -67,10 +67,22 @@ func GetQuestionsByIdHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func truncateByRune(s string, limit int) string {
+	runes := []rune(s)
+	if len(runes) > limit {
+		return string(runes[:limit]) + "..." // 添加省略号以表示截断
+	}
+	return s
+}
+
 func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
 	// 解析 multipart 表单数据，限制最大上传文件大小
+	fmt.Println("asdasdasdasd")
 	err := r.ParseMultipartForm(10 << 20) // 限制为 10 MB
+
 	if err != nil {
+		fmt.Println(err.Error())
+
 		http.Error(w, "File too large", http.StatusBadRequest)
 		return
 	}
@@ -78,6 +90,8 @@ func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
 	// 获取上传的文件
 	file, _, err := r.FormFile("file")
 	if err != nil {
+		fmt.Println(err.Error())
+
 		http.Error(w, "Error retrieving the file", http.StatusInternalServerError)
 		return
 	}
@@ -86,6 +100,7 @@ func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
 	// 读取文件内容到内存中
 	fileContents, err := io.ReadAll(file)
 	if err != nil {
+		fmt.Println(err.Error())
 		http.Error(w, "Error reading the file", http.StatusInternalServerError)
 		return
 	}
@@ -99,6 +114,8 @@ func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
 	var dataList []QuestionRequest
 	err = json.Unmarshal(fileContents, &dataList)
 	if err != nil {
+		fmt.Println(err.Error())
+
 		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
 		return
 	}
@@ -106,10 +123,12 @@ func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
 	for _, data := range dataList {
 		increase, err := dao.CounterImpl{}.GetAndIncrease("questions")
 		if err != nil {
+			fmt.Println(err.Error())
 			http.Error(w, "Error increasing questions", http.StatusInternalServerError)
 			return
 		}
-		list = append(list, model.QuestionModel{ID: increase, Title: data.Question, Tags: data.Tags, Details: data.Answer, Content: data.Answer[0:20], ClassId: data.ClassId})
+		list = append(list, model.QuestionModel{ID: increase, Title: data.Question, Tags: data.Tags,
+			Details: data.Answer, Content: truncateByRune(data.Answer, 20), ClassId: data.ClassId})
 	}
 	err = questionImp.BatchAdd(&list)
 	if err != nil {

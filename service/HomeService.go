@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 	"wxcloudrun-golang/db/dao"
 	"wxcloudrun-golang/db/model"
@@ -41,7 +40,7 @@ func generateHotPosts() []model.HotPost {
 	return posts
 }
 
-func GetHottestHandler(w http.ResponseWriter, r *http.Request) {
+func GetHottestPostHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	posts := generateHotPosts()
 
@@ -50,28 +49,4 @@ func GetHottestHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
 		return
 	}
-}
-
-func GetQuestionsByPageHandler(w http.ResponseWriter, r *http.Request) {
-	res := &JsonResult{}
-	w.Header().Set("Content-Type", "application/json")
-
-	var page_number = 1
-	var err error
-	if r.URL.Query().Get("page_id") != "" {
-		page_number, err = strconv.Atoi(r.URL.Query().Get("page_id"))
-	}
-	if err != nil {
-		res.Code = -1
-		res.ErrorMsg = "Failed to get page number"
-	}
-	posts, _ := questionImp.QueryQuestions(int64(page_number))
-	res.Code = 1
-	res.Data = posts
-	err = json.NewEncoder(w).Encode(res)
-	if err != nil {
-		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
-		return
-	}
-
 }

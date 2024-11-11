@@ -15,11 +15,13 @@ db.getCollection('collections')
             unique: true
         }
     );
-// db.getCollection('collection_item')
-//     .createIndex(
-//         {
-//             openid: 1
-//         }, {
-//             unique: true
-//         }
-//     );
+db.getCollection('collection_item')
+    .createIndex(
+        {
+            openid: 1,
+            collection_id:1,
+            question_id:1
+        }, {
+            unique: true
+        }
+    );
