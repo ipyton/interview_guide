@@ -51,12 +51,7 @@ func GetUserInfo(w http.ResponseWriter, r *http.Request) {
 	res := JsonResult{}
 	res.Code = 1
 	res.Data = info
-	err = json.NewEncoder(w).Encode(res)
-
-	if err != nil {
-		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
-		return
-	}
 	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(res)
 
 }

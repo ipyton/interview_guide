@@ -14,6 +14,7 @@ type BookmarkCollectionModel struct {
 	Extra3         string    `gorm:"column:extra3;omitempty" json:"extra3,omitempty" bson:"extra3,omitempty"` // 额外字段3
 }
 
+// compare with question model this model is more simple with less information
 type BookmarkQuestionModel struct {
 	CollectionID int64     `gorm:"column:collection_id" json:"collection_id" bson:"collection_id"`
 	QuestionId   int64     `gorm:"column:question_id" json:"question_id" bson:"question_id"`

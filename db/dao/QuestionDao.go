@@ -68,13 +68,14 @@ func (impl *QuestionInterfaceImpl) GetQuestionById(id int64) (model.QuestionMode
 	return question, collection.FindOne(context.TODO(), filter).Decode(&question)
 }
 
-func (impl *QuestionInterfaceImpl) GetQuestionsById(lastId int64) (*[]model.QuestionModel, error) {
+func (impl *QuestionInterfaceImpl) GetQuestionsByPaging(lastId int64, classId int64) (*[]model.QuestionModel, error) {
 	// 使用 question_id 字段作为分页游标
 	limit := 10
 	var collection = db.MongoClient.Database("interview_guide").Collection("question")
 
 	filter := bson.M{
 		"question_id": bson.M{"$gt": lastId}, // 查询 question_id 大于上一页的最后一个 question_id
+		"class_id":    bson.M{"$eq": classId},
 	}
 	projection := bson.M{
 		"question_id": 1, // 1表示包含字段
@@ -83,6 +84,7 @@ func (impl *QuestionInterfaceImpl) GetQuestionsById(lastId int64) (*[]model.Ques
 	}
 	findOptions := options.Find().SetProjection(projection)
 	findOptions.SetSort(bson.D{{"question_id", 1}}) // 按 question_id 升序排序
+
 	findOptions.SetLimit(int64(limit))
 
 	// 执行查询

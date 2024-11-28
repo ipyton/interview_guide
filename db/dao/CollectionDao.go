@@ -209,22 +209,25 @@ func (dao *CollectionQuestionInterfaceImpl) DeleteBookMarkCollection(userID stri
 
 	return nil
 }
-func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByTime(openId string, pageNumber int64) (*[]model.BookmarkQuestionModel, error) {
+func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByTime(openId string, lastQuestionId int64, isDescending bool) (*[]model.BookmarkQuestionModel, error) {
 	const pageSize = 10
 
 	// 获取 MongoDB 客户端连接
 
 	// 选择特定的数据库和集合
 	collection := db.MongoClient.Database("interview_guide").Collection("collection_items")
-
-	// 创建查询条件
-	filter := bson.M{"user_id": openId}
-
+	filter := bson.M{
+		"question_id": bson.M{"$gt": lastQuestionId}, // 查询 question_id 大于上一页的最后一个 question_id
+		"openid":      bson.M{"$eq": openId},
+	}
 	// 设置分页和排序选项
 	findOptions := options.Find()
-	findOptions.SetSort(bson.D{{"created_at", -1}})         // 按 created_at 降序排序
-	findOptions.SetSkip(int64((pageNumber - 1) * pageSize)) // 跳过前 (pageNumber-1) 页的数据
-	findOptions.SetLimit(int64(pageSize))                   // 每页限制 pageSize 个文档
+	if isDescending {
+		findOptions.SetSort(bson.D{{"created_at", -1}})
+	} else {
+		findOptions.SetSort(bson.D{{"created_at", 1}})
+	}
+	findOptions.SetLimit(int64(pageSize)) // 每页限制 pageSize 个文档
 
 	// 查询结果
 	cursor, err := collection.Find(context.TODO(), filter, findOptions)

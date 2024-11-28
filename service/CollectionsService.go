@@ -22,7 +22,6 @@ func processGetItemsRequest(r *http.Request) (*CollectionRequest, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read request body")
-
 	}
 	defer r.Body.Close()
 
@@ -151,7 +150,7 @@ func AddBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 
 func DelBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 	collectionID := r.URL.Query().Get("collection_id")
-	userId := r.URL.Query().Get("user_id")
+	userId := r.Header.Get("openid")
 	num, err := strconv.ParseInt(collectionID, 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -167,26 +166,35 @@ func DelBookmarkCollection(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCollectionItemsByTime(w http.ResponseWriter, r *http.Request) {
-	req, err := processGetItemsRequest(r)
+	openid := r.Header.Get("openid")
+	question_id, err := strconv.ParseInt(r.URL.Query().Get("question_id"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
 	}
+
+	isDescending, err := strconv.ParseBool(r.URL.Query().Get("isDescending"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
 	// 验证参数
-	if req.OpenID == "" || req.Category == "" || req.PageNumber < 1 {
+	if openid == "" {
 		http.Error(w, "Missing or invalid parameters", http.StatusBadRequest)
 		return
 	}
-	items, err := bookmarkCollectionDAO.GetCollectionItemsByTime(req.OpenID, req.PageNumber)
+	fmt.Println(openid)
+	fmt.Println(question_id)
+	fmt.Println(isDescending)
+	items, err := bookmarkCollectionDAO.GetCollectionItemsByTime(openid, question_id, isDescending)
 	marshal, err := json.Marshal(JsonResult{Code: 1, Data: *items})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(marshal)
 	w.WriteHeader(http.StatusOK)
-	// 输出解析结果（这里可以根据业务需求继续处理 req）
+	w.Write(marshal)
+
 }
 
 func GetCollectionItemsByCategory(w http.ResponseWriter, r *http.Request) {

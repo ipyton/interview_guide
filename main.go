@@ -59,11 +59,10 @@ func main() {
 	// 定义路由及对应的处理器
 	mux.Handle("/home", AuthMiddleware(http.HandlerFunc(service.HomeHandler)))
 	mux.Handle("/home/get", AuthMiddleware(http.HandlerFunc(service.GetHottestPostHandler)))
-	mux.Handle("/questions/page/get/id", AuthMiddleware(http.HandlerFunc(service.GetQuestionsByIdHandler)))
+	mux.Handle("/questions/page/get/id", AuthMiddleware(http.HandlerFunc(service.GetQuestionsByPagingHandler)))
 	mux.Handle("/questions/page/get/hottest", AuthMiddleware(http.HandlerFunc(service.GetHottestQuestionHandler)))
 	mux.Handle("/questions/page/get/tag", AuthMiddleware(http.HandlerFunc(service.GetQuestionsByTag)))
 	mux.Handle("/questions/page/get/details", AuthMiddleware(http.HandlerFunc(service.GetQuestionByIdHandler)))
-
 	//mux.Handle("/questions/getById", AuthMiddleware(http.HandlerFunc(service.GetQuestionsByIdHandler)))
 	mux.Handle("/questions/upsert", AuthMiddleware(http.HandlerFunc(service.UpsertQuestions)))
 	mux.Handle("/questions/insert_by_file", AuthMiddleware(http.HandlerFunc(service.UpsertQuestionsByFile)))

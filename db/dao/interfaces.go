@@ -22,7 +22,7 @@ type CollectionQuestionInterface interface {
 	AddQuestionCollection(collection *model.BookmarkCollectionModel) error
 	DeleteBookMarkCollection(openid string, collectionID int64) error
 	IsResourceCollected(openid string, questionId int64) (bool, error)
-	GetCollectionItemsByTime(openId string, pageNumber int64) (*[]model.BookmarkQuestionModel, error)
+	GetCollectionItemsByTime(openId string, questionId int64, isDescending bool) (*[]model.BookmarkQuestionModel, error)
 }
 
 type QuestionInterface interface {
@@ -31,7 +31,7 @@ type QuestionInterface interface {
 	GetQuestionById(id int64) (model.QuestionModel, error)
 	QueryQuestions(page int64) ([]model.QuestionModel, error)
 	BatchAdd(questions *[]model.QuestionModel) error
-	GetQuestionsById(lastId int64) (*[]model.QuestionModel, error)
+	GetQuestionsByPaging(lastId int64, classId int64) (*[]model.QuestionModel, error)
 }
 
 type ClassInterface interface {

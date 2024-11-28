@@ -77,7 +77,6 @@ func truncateByRune(s string, limit int) string {
 
 func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
 	// 解析 multipart 表单数据，限制最大上传文件大小
-	fmt.Println("asdasdasdasd")
 	err := r.ParseMultipartForm(10 << 20) // 限制为 10 MB
 
 	if err != nil {
