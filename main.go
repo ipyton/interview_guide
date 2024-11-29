@@ -76,16 +76,17 @@ func main() {
 	mux.Handle("/collections/collection/get", AuthMiddleware(http.HandlerFunc(service.GetBookmarkCollections)))
 	mux.Handle("/classes/insert", AuthMiddleware(http.HandlerFunc(service.InsertClassHandler)))
 	mux.Handle("/classes/update", AuthMiddleware(http.HandlerFunc(service.UpdateClassHandler)))
-
 	mux.Handle("/classes/delete", AuthMiddleware(http.HandlerFunc(service.DeleteClassHandler)))
 	mux.Handle("/classes/get", AuthMiddleware(http.HandlerFunc(service.GetClassHandler)))
 	mux.Handle("/user/login", http.HandlerFunc(service.LoginHandler)) // 登录不需要身份验证
 	//mux.Handle("/user/validate", http.HandlerFunc(service.ValidateTokenHandler)) // 验证令牌不需要身份验证
 	mux.Handle("/user/get_info", AuthMiddleware(http.HandlerFunc(service.GetUserInfo)))
 	mux.Handle("/user/set_class", AuthMiddleware(http.HandlerFunc(service.SetClass)))
-	// get/set class tags
 	mux.Handle("/tags/get", AuthMiddleware(http.HandlerFunc(service.GetTags)))
 	mux.Handle("/tags/update", AuthMiddleware(http.HandlerFunc(service.UpdateTags)))
+	mux.Handle("/voice/get", AuthMiddleware(http.HandlerFunc(service.GetVoiceHandler)))
+	mux.Handle("/voice/delete", AuthMiddleware(http.HandlerFunc(service.DeleteVoiceHandler)))
+	mux.Handle("/voice/generate", AuthMiddleware(http.HandlerFunc(service.GenerateVoiceHandler)))
 
 	cors := handlers.CORS(handlers.AllowedOrigins([]string{"*"}),
 		handlers.AllowedMethods([]string{"get", "post", "put", "patch", "delete"}),

@@ -11,11 +11,11 @@ func getNextSequenceValue(sequenceName string) (int64, error) {
 	collection := db.MongoClient.Database("interview_guide").Collection("counters")
 
 	filter := bson.M{"_id": sequenceName}
-	update := bson.M{"$inc": bson.M{"sequence_value": 1}}
+	update := bson.M{"$inc": bson.M{"value": 1}}
 	options := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
 
 	var result struct {
-		SequenceValue int64 `bson:"sequence_value"`
+		SequenceValue int64 `bson:"value"`
 	}
 
 	err := collection.FindOneAndUpdate(context.TODO(), filter, update, options).Decode(&result)

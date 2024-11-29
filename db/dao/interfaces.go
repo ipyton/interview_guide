@@ -23,6 +23,7 @@ type CollectionQuestionInterface interface {
 	DeleteBookMarkCollection(openid string, collectionID int64) error
 	IsResourceCollected(openid string, questionId int64) (bool, error)
 	GetCollectionItemsByTime(openId string, questionId int64, isDescending bool) (*[]model.BookmarkQuestionModel, error)
+	// IsExist(openid string, questionId int64, )
 }
 
 type QuestionInterface interface {
@@ -59,4 +60,8 @@ type UserInformationInterface interface {
 	ChangeMembershipStatus(openid string, status bool) error
 	AddPoints(openid string, points int64) error
 	UpdateUserClass(openid string, classId int64, className string) error
+}
+type VoiceInterface interface {
+	GetVoice(questionId string) error
+	GenerateVoice(questionId string) error
 }

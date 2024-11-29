@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"wxcloudrun-golang/db/model"
 )
 
 func GetQuestionsByPagingHandler(writer http.ResponseWriter, request *http.Request) {
@@ -26,6 +27,9 @@ func GetQuestionsByPagingHandler(writer http.ResponseWriter, request *http.Reque
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+	if questions == nil || len(*questions) == 0 {
+		questions = &[]model.QuestionModel{} // Initialize as an empty slice if nil
 	}
 	writer.Header().Set("Content-Type", "application/json")
 	marshal, err := json.Marshal(JsonResult{Code: 1, Data: *questions})

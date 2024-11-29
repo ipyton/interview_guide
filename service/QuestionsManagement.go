@@ -21,7 +21,8 @@ func UpsertQuestions(w http.ResponseWriter, r *http.Request) {
 	var question model.QuestionModel
 
 	if err := json.NewDecoder(r.Body).Decode(&question); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	err = questionImp.UpsertQuestion(&question)
@@ -32,6 +33,7 @@ func UpsertQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
+		fmt.Println(err.Error())
 		http.Error(w, "Failed to encode posts", http.StatusInternalServerError)
 		return
 	}
@@ -43,6 +45,7 @@ func GetQuestionByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	var question_id = -1
 	var err error
+	//var openid = r.Header.Get("openid")
 	if r.URL.Query().Get("question_id") != "" {
 		question_id, err = strconv.Atoi(r.URL.Query().Get("question_id"))
 	}
@@ -56,6 +59,7 @@ func GetQuestionByIdHandler(w http.ResponseWriter, r *http.Request) {
 		res.ErrorMsg = "Invalid question id"
 	} else {
 		posts, _ := questionImp.GetQuestionById(int64(question_id))
+
 		res.Code = 1
 		res.Data = posts
 	}

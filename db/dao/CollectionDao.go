@@ -294,6 +294,5 @@ func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByCategory(openId 
 	if err := cursor.Err(); err != nil {
 		return nil, fmt.Errorf("cursor error: %v", err)
 	}
-
 	return &items, nil
 }

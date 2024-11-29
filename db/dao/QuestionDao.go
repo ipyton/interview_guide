@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -29,8 +30,9 @@ func (impl *QuestionInterfaceImpl) UpsertQuestion(question *model.QuestionModel)
 	//filter := bson.M{"_id": 1}
 	//update := bson.M{"$set": }
 	questionId := question.ID
+
 	if questionId == -1 {
-		value, err2 := getNextSequenceValue("question_id")
+		value, err2 := getNextSequenceValue("questions")
 		if err2 != nil {
 			return err2
 		}
@@ -38,7 +40,7 @@ func (impl *QuestionInterfaceImpl) UpsertQuestion(question *model.QuestionModel)
 		questionId = value
 	}
 
-	filter := bson.M{"question_id": question.ID}
+	filter := bson.M{"question_id": questionId}
 	update := bson.D{
 		{"$set", bson.D{
 			{"title", question.Title},
@@ -105,8 +107,10 @@ func (impl *QuestionInterfaceImpl) GetQuestionsByPaging(lastId int64, classId in
 	}
 
 	if err := cursor.Err(); err != nil {
+		fmt.Println(err.Error())
 		return nil, err
 	}
+	fmt.Println(len(questions))
 
 	return &questions, nil
 }

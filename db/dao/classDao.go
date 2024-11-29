@@ -75,9 +75,7 @@ func (classInterfaceImpl ClassInterfaceImpl) GetClasses(parentClassId int64) ([]
 	if err = cur.All(context.TODO(), &result); err != nil {
 		log.Fatal(err.Error())
 	}
-	for _, class := range result {
-		fmt.Printf("Name: %s, ClassName: %s\n", class.ClassId, class.ClassName)
-	}
+
 	return result, err
 }
 func (classInterfaceImpl ClassInterfaceImpl) DeleteClass(classId int64) error {
