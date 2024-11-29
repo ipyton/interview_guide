@@ -1,6 +1,6 @@
 package model
 
 type VoiceModel struct {
-	questionId int64
-	path       string
+	QuestionId int64  `bson:"QuestionId"`
+	Path       string `bson:"Path"`
 }

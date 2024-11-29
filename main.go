@@ -45,7 +45,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		fmt.Println("asdasdasdasdasdasd")
 
 		// 如果验证成功，调用下一个处理器
 		next.ServeHTTP(w, r)
@@ -54,6 +53,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 func main() {
 	db.InitMongo()
+	db.InitMinio()
 	mux := http.NewServeMux()
 
 	// 定义路由及对应的处理器

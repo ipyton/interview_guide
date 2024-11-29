@@ -65,3 +65,8 @@ type VoiceInterface interface {
 	GetVoice(questionId string) error
 	GenerateVoice(questionId string) error
 }
+type FileManager interface {
+	GetFile(questionId string) (string, error)
+	UploadFile(fileName string, fileType string, file []byte) (string, error)
+	DeleteFile(fileName string, fileType string) error
+}
