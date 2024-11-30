@@ -41,6 +41,7 @@ func (FileManagerImpl) UploadFile(fileName string, fileType string, voice []byte
 			}
 		}
 		buf := bytes.NewReader(voice)
+		fmt.Println(fileName)
 
 		_, err = db.MinioClient.PutObject(background, "question-voice", "/"+fileName[0:2]+"/"+fileName,
 			buf, int64(len(voice)), minio.PutObjectOptions{ContentType: "audio/mpeg"})

@@ -19,30 +19,39 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// 从请求头中提取 Authorization 字段
 		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
+		//if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		//	http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		//	return
+		//}
+		token := ""
+		// 提取证令牌
+		if authHeader != "" {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+		//notice to delete it.
+
+		if r.URL.Query().Get("token") != "" {
+			token = r.URL.Query().Get("token")
 		}
 
-		// 提取并验证令牌
-		token := strings.TrimPrefix(authHeader, "Bearer ")
-		//notice to delete it.
 		if token == "czhdawang" {
 			next.ServeHTTP(w, r)
 			return
-
 		}
-
+		if token == "" {
+			http.Error(w, "Unauthorized1", http.StatusUnauthorized)
+			return
+		}
 		valid, err := impl.IsTokenValid(token, r.RequestURI)
 		if err != nil {
 			fmt.Println(err)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "Unauthorized2", http.StatusUnauthorized)
 			return
 		}
 		r.Header.Set("openid", valid.Openid)
 
 		if err != nil && valid.ExpiresAt.Before(time.Now()) {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "Unauthorized3", http.StatusUnauthorized)
 			return
 		}
 

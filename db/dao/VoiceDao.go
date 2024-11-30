@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -120,9 +121,9 @@ func synthesis(text string) ([]byte, error) {
 	return audio, nil
 }
 
-func (*VoiceDaoImpl) GenerateVoice(questionId string) ([]byte, error) {
-	id, err := strconv.ParseInt(questionId, 10, 64)
-	question, err := questionImpl.GetQuestionById(id)
+func (*VoiceDaoImpl) GenerateVoice(questionId int64) ([]byte, error) {
+	//id, err := strconv.ParseInt(questionId, 10, 64)
+	question, err := questionImpl.GetQuestionById(questionId)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -130,17 +131,21 @@ func (*VoiceDaoImpl) GenerateVoice(questionId string) ([]byte, error) {
 	title := question.Title
 	voice, err := synthesis(title + details)
 	collection := db.MongoClient.Database("interview_guide").Collection("question_voice")
-	id, err = strconv.ParseInt(questionId, 10, 64)
+	//id, err = strconv.ParseInt(questionId, 10, 64)
 	if err != nil {
 		return []byte{}, err
 	}
+	str := strconv.FormatInt(questionId, 10) // 第二个参数是基数，10表示十进制
+	if len(str) == 1 {
+		str = "0" + str
 
-	voiceModel := model.VoiceModel{QuestionId: id, Path: questionId[0:2] + "/" + questionId}
+	}
+	voiceModel := model.VoiceModel{QuestionId: questionId, Path: str[0:2] + "/" + str}
 	_, err = collection.InsertOne(context.TODO(), voiceModel)
 	if err != nil {
 		return nil, err
 	}
-	err = fileImpl.UploadFile(questionId, "question-voice", voice)
+	err = fileImpl.UploadFile(str, "question-voice", voice)
 	if err != nil {
 		fmt.Printf(err.Error())
 		return nil, err
@@ -149,7 +154,7 @@ func (*VoiceDaoImpl) GenerateVoice(questionId string) ([]byte, error) {
 	return voice, err
 }
 
-func (*VoiceDaoImpl) GetVoice(questionId int64) (*minio.Object, error) {
+func (this *VoiceDaoImpl) GetVoice(questionId int64) (*minio.Object, error) {
 	var collection = db.MongoClient.Database("interview_guide").Collection("question_voice")
 	filter := bson.M{"QuestionId": questionId}
 
@@ -157,6 +162,14 @@ func (*VoiceDaoImpl) GetVoice(questionId int64) (*minio.Object, error) {
 	var voice model.VoiceModel
 	err := one.Decode(&voice)
 	if err != nil {
+		if errors.Is(mongo.ErrNoDocuments, err) {
+			_, err := this.GenerateVoice(questionId)
+			if err != nil {
+				return nil, err
+			}
+			file, err := fileImpl.GetFile(voice.Path, "question-voice")
+			return file, err
+		}
 		fmt.Println(err.Error())
 		return nil, err
 	}

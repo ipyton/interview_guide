@@ -48,9 +48,11 @@ func DeleteVoiceHandler(w http.ResponseWriter, r *http.Request) {
 
 func GenerateVoiceHandler(w http.ResponseWriter, r *http.Request) {
 	question_id := r.URL.Query().Get("question_id")
-	fmt.Println(question_id)
-
-	voice, err := voiceDao.GenerateVoice(question_id)
+	id, err2 := strconv.ParseInt(question_id, 10, 64)
+	if err2 != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	voice, err := voiceDao.GenerateVoice(id)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 		fmt.Println(err.Error())
