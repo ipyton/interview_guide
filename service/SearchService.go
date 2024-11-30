@@ -11,11 +11,14 @@ import (
 	"net/http"
 	"time"
 	"wxcloudrun-golang/db"
+	"wxcloudrun-golang/db/dao"
 )
 
 type SearchRequest struct {
 	Keyword string `json:"keyword"`
 }
+
+var search dao.SearchDaoImpl
 
 func GetResults(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
@@ -27,6 +30,16 @@ func GetResults(w http.ResponseWriter, r *http.Request) {
 		}
 		err = json.Unmarshal(body, &request)
 		fmt.Println(request.Keyword)
+		questions, err := search.SearchQuestions(request.Keyword)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		marshal, err := json.Marshal(questions)
+		if err != nil {
+		}
+		w.Write(marshal)
+		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return

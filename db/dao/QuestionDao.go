@@ -14,6 +14,8 @@ type QuestionInterfaceImpl struct {
 	QuestionInterface
 }
 
+var searchDao SearchDaoImpl
+
 func (impl *QuestionInterfaceImpl) BatchAdd(questions *[]model.QuestionModel) error {
 	var collection = db.MongoClient.Database("interview_guide").Collection("question")
 	var documents []interface{}
@@ -39,7 +41,7 @@ func (impl *QuestionInterfaceImpl) UpsertQuestion(question *model.QuestionModel)
 
 		questionId = value
 	}
-
+	question.ID = questionId
 	filter := bson.M{"question_id": questionId}
 	update := bson.D{
 		{"$set", bson.D{
@@ -58,6 +60,11 @@ func (impl *QuestionInterfaceImpl) UpsertQuestion(question *model.QuestionModel)
 
 	// 设置 upsert 选项
 	opts := options.Update().SetUpsert(true)
+	err2 := searchDao.CreateQuestionIndex(*question)
+	if err2 != nil {
+		log.Fatal(err2.Error())
+		return err2
+	}
 	_, err := collection.UpdateOne(context.TODO(), filter, update, opts)
 	return err
 }
