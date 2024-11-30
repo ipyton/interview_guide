@@ -70,7 +70,7 @@ func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteBookmarkItem(w http.ResponseWriter, r *http.Request) {
-	userId := r.URL.Query().Get("user_id")
+	userId := r.Header.Get("openid")
 	questionId, err := strconv.ParseInt(r.URL.Query().Get("question_id"), 10, 64)
 
 	if err != nil {

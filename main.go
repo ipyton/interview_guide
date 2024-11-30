@@ -24,12 +24,11 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		//	return
 		//}
 		token := ""
-		// 提取证令牌
 		if authHeader != "" {
 			token = strings.TrimPrefix(authHeader, "Bearer ")
 		}
-		//notice to delete it.
 
+		//notice to delete it.
 		if r.URL.Query().Get("token") != "" {
 			token = r.URL.Query().Get("token")
 		}
@@ -49,7 +48,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		r.Header.Set("openid", valid.Openid)
-
 		if err != nil && valid.ExpiresAt.Before(time.Now()) {
 			http.Error(w, "Unauthorized3", http.StatusUnauthorized)
 			return
@@ -63,6 +61,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 func main() {
 	db.InitMongo()
 	db.InitMinio()
+	db.InitElasticSearchClient()
 	mux := http.NewServeMux()
 
 	// 定义路由及对应的处理器
@@ -75,6 +74,8 @@ func main() {
 	//mux.Handle("/questions/getById", AuthMiddleware(http.HandlerFunc(service.GetQuestionsByIdHandler)))
 	mux.Handle("/questions/upsert", AuthMiddleware(http.HandlerFunc(service.UpsertQuestions)))
 	mux.Handle("/questions/insert_by_file", AuthMiddleware(http.HandlerFunc(service.UpsertQuestionsByFile)))
+	mux.Handle("/questions/search", AuthMiddleware(http.HandlerFunc(service.GetResults)))
+	mux.Handle("/questions/search/test", AuthMiddleware(http.HandlerFunc(service.Testing)))
 	mux.Handle("/collections/collection/get_items_by_time", AuthMiddleware(http.HandlerFunc(service.GetCollectionItemsByTime)))
 	mux.Handle("/collections/item/delete", AuthMiddleware(http.HandlerFunc(service.DeleteBookmarkItem)))
 	mux.Handle("/collections/item/add", AuthMiddleware(http.HandlerFunc(service.AddBookmarkItem)))

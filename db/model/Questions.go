@@ -12,6 +12,7 @@ type QuestionModel struct {
 	Avatar     string   `gorm:"column:avatar;size:100" json:"avatar" bson:"avatar"` // Avatar of the author
 	Likes      int64    `gorm:"column:likes" json:"likes" bson:"likes"`             // Number of likes
 	Views      int64    `gorm:"column:views" json:"views" bson:"views"`             // Number of views
-	Tags       []string `gorm:"column:tags" json:"tags" bson:"tags"`                // Tag 1
+	Difficulty string   `gorm:"column:difficulty" json:"difficulty" bson:"difficulty"`
+	Tags       []string `gorm:"column:tags" json:"tags" bson:"tags"` // Tag 1
 
 }

@@ -70,3 +70,8 @@ type FileManager interface {
 	UploadFile(fileName string, fileType string, file []byte) (string, error)
 	DeleteFile(fileName string, fileType string) error
 }
+
+type SearchDaoInterface interface {
+	CreateQuestionIndex(question model.QuestionModel) error
+	SearchQuestions(keyword string) (model.QuestionModel, error)
+}
