@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"mime/multipart"
 	"wxcloudrun-golang/db/model"
 )
 
@@ -16,14 +17,14 @@ import (
 
 type CollectionQuestionInterface interface {
 	GetCollections(openId string) (*[]model.BookmarkCollectionModel, error)
-	GetItemsInCollection(openid string, collectionId int64) (*[]model.BookmarkQuestionModel, error)
 	DeleteBookMarkQuestion(openid string, collectionId int64, questionId int64) error
 	AddBookMarkQuestion(openId string, collectionID int64, questionId int64) error
 	AddQuestionCollection(collection *model.BookmarkCollectionModel) error
 	DeleteBookMarkCollection(openid string, collectionID int64) error
 	IsResourceCollected(openid string, questionId int64) (bool, error)
-	GetCollectionItemsByTime(openId string, questionId int64, isDescending bool) (*[]model.BookmarkQuestionModel, error)
+	GetCollectionItemsByCollectionAndTime(openId string, lastQuestionId int64, isDescending bool, collectionId int64) (*[]model.BookmarkQuestionModel, error)
 	// IsExist(openid string, questionId int64, )
+	GetCollectionItemsByTag(openId string, questionId int64, tag int64, collectionId int64) (*[]model.BookmarkQuestionModel, error)
 }
 
 type QuestionInterface interface {
@@ -56,6 +57,7 @@ type UserStatusInterface interface {
 	UpsertLoginStatus(userStatus model.UserStatus, ip string) error
 }
 type UserInformationInterface interface {
+	UploadAvatar(openid string, file multipart.File) error
 	UpdateUserInfo(user model.User) error
 	ChangeMembershipStatus(openid string, status bool) error
 	AddPoints(openid string, points int64) error
@@ -69,9 +71,10 @@ type FileManager interface {
 	GetFile(questionId string) (string, error)
 	UploadFile(fileName string, fileType string, file []byte) (string, error)
 	DeleteFile(fileName string, fileType string) error
+	UploadFileByMultipartFile(fileName string, fileType string, file multipart.File) error
 }
 
 type SearchDaoInterface interface {
-	CreateQuestionIndex(question model.QuestionModel) error
+	UpsertQuestionIndex(question model.QuestionModel) error
 	SearchQuestions(keyword string) (model.QuestionModel, error)
 }

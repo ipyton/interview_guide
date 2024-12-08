@@ -113,6 +113,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
+	fmt.Println(body)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)

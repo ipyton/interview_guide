@@ -10,6 +10,8 @@ import (
 	"wxcloudrun-golang/db/model"
 )
 
+var searchDao = dao.SearchDaoImpl{}
+
 func UpsertQuestions(w http.ResponseWriter, r *http.Request) {
 	res := &JsonResult{}
 	res.Data = "success"
@@ -140,4 +142,16 @@ func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func AdviceAQuestion(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func GetAdvisedQuestions(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func ApproveAQuestion(w http.ResponseWriter, r *http.Request) {
+
 }

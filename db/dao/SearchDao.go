@@ -18,9 +18,38 @@ type SearchDaoImpl struct {
 	SearchDaoInterface
 }
 
-func (this *SearchDaoImpl) CreateQuestionIndex(question model.QuestionModel) error {
+func (this *SearchDaoImpl) UpsertQuestionIndex(question model.QuestionModel) error {
 
-	reqBody, err := json.Marshal(question)
+	reqBody, err := json.Marshal(map[string]interface{}{
+		"doc": map[string]interface{}{
+			"title":       question.Title,
+			"class_id":    question.ClassId,
+			"type":        question.Type,
+			"content":     question.Content,
+			"details":     question.Details,
+			"author_id":   question.AuthorID,
+			"author_name": question.AuthorName,
+			"avatar":      question.Avatar,
+			"likes":       question.Likes,
+			"views":       question.Views,
+			"difficulty":  question.Difficulty,
+			"tags":        question.Tags,
+		},
+		"upsert": map[string]interface{}{
+			"title":       question.Title,
+			"class_id":    question.ClassId,
+			"type":        question.Type,
+			"content":     question.Content,
+			"details":     question.Details,
+			"author_id":   question.AuthorID,
+			"author_name": question.AuthorName,
+			"avatar":      question.Avatar,
+			"likes":       question.Likes,
+			"views":       question.Views,
+			"difficulty":  question.Difficulty,
+			"tags":        question.Tags,
+		},
+	})
 	fmt.Printf("Request Body: %s\n", reqBody)
 
 	if err != nil {
@@ -28,7 +57,7 @@ func (this *SearchDaoImpl) CreateQuestionIndex(question model.QuestionModel) err
 	}
 	fmt.Println(question.ID)
 	formatInt := strconv.FormatInt(question.ID, 10)
-	request := esapi.IndexRequest{
+	request := esapi.UpdateRequest{
 		Index:      "new-questions", // 索引名称
 		DocumentID: formatInt,
 		Body:       bytes.NewReader(reqBody),

@@ -60,7 +60,7 @@ func (impl *QuestionInterfaceImpl) UpsertQuestion(question *model.QuestionModel)
 
 	// 设置 upsert 选项
 	opts := options.Update().SetUpsert(true)
-	err2 := searchDao.CreateQuestionIndex(*question)
+	err2 := searchDao.UpsertQuestionIndex(*question)
 	if err2 != nil {
 		log.Fatal(err2.Error())
 		return err2

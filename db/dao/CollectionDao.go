@@ -52,7 +52,7 @@ func (dao *CollectionQuestionInterfaceImpl) GetCollections(openId string) (*[]mo
 	return &results, nil
 }
 
-func (dao *CollectionQuestionInterfaceImpl) GetItemsInCollection(openId string, collectionID int64) (*[]model.BookmarkQuestionModel, error) {
+func (dao *CollectionQuestionInterfaceImpl) GetItemsInCollection(openId string, collectionID int64, isDescending bool) (*[]model.BookmarkQuestionModel, error) {
 	var items = &[]model.BookmarkQuestionModel{}
 
 	collection := db.MongoClient.Database("interview_guide").Collection("collection_items")
@@ -63,20 +63,16 @@ func (dao *CollectionQuestionInterfaceImpl) GetItemsInCollection(openId string, 
 		"collection_id": collectionID,
 		"openid":        openId,
 	}
-	fmt.Println("ooxxx")
-
 	// 执行查询
 	cursor, err := collection.Find(context.TODO(), filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute find: %v", err)
 	}
-	fmt.Println("ooxxx")
 
 	defer cursor.Close(context.TODO())
 
 	for cursor.Next(context.TODO()) {
 		var item model.BookmarkQuestionModel
-		fmt.Println("ooxxx")
 		if err := cursor.Decode(&item); err != nil {
 			return nil, fmt.Errorf("failed to decode result: %v", err)
 		}
@@ -209,19 +205,31 @@ func (dao *CollectionQuestionInterfaceImpl) DeleteBookMarkCollection(userID stri
 
 	return nil
 }
-func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByTime(openId string, lastQuestionId int64, isDescending bool) (*[]model.BookmarkQuestionModel, error) {
+func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByCollectionAndTime(openId string, lastQuestionId int64, isDescending bool, collectionId int64) (*[]model.BookmarkQuestionModel, error) {
 	const pageSize = 10
 
 	// 获取 MongoDB 客户端连接
 
 	// 选择特定的数据库和集合
 	collection := db.MongoClient.Database("interview_guide").Collection("collection_items")
-	filter := bson.M{
-		"question_id": bson.M{"$gt": lastQuestionId}, // 查询 question_id 大于上一页的最后一个 question_id
-		"openid":      bson.M{"$eq": openId},
+	filter := bson.M{}
+	if collectionId == -1 {
+		filter = bson.M{
+			"question_id": bson.M{"$gt": lastQuestionId}, // 查询 question_id 大于上一页的最后一个 question_id
+			"openid":      bson.M{"$eq": openId},
+		}
+	} else {
+		filter = bson.M{
+			"question_id":   bson.M{"$gt": lastQuestionId}, // 查询 question_id 大于上一页的最后一个 question_id
+			"openid":        bson.M{"$eq": openId},
+			"collection_id": collectionId,
+		}
+
 	}
+
 	// 设置分页和排序选项
 	findOptions := options.Find()
+	fmt.Println(isDescending)
 	if isDescending {
 		findOptions.SetSort(bson.D{{"created_at", -1}})
 	} else {
@@ -255,31 +263,30 @@ func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByTime(openId stri
 	return &items, nil
 }
 
-func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByCategory(openId string, category string, pageNumber int64) (*[]model.BookmarkQuestionModel, error) {
+func (dao *CollectionQuestionInterfaceImpl) GetCollectionItemsByTag(openId string, questionId int64, tag int64, collectionId int64) (*[]model.BookmarkQuestionModel, error) {
 	// 每页的项目数量
 	const pageSize = 10
 
 	collection := db.MongoClient.Database("interview_guide").Collection("collection_items")
 
-	// 创建查询条件
 	filter := bson.M{
-		"user_id":  openId,   // 用户 ID
-		"category": category, // 项目类别
-	}
+		"question_id": bson.M{"$gt": questionId}, // 查询 question_id 大于上一页的最后一个 question_id
+		"openid":      bson.M{"$eq": openId},
+		"tag":         tag, // 项目类别
 
+	}
 	// 设置分页选项
 	findOptions := options.Find()
-	findOptions.SetSkip(int64((pageNumber - 1) * pageSize)) // 跳过前 (pageNumber - 1) 页的数据
-	findOptions.SetLimit(int64(pageSize))                   // 每页限制 pageSize 个文档
+
+	findOptions.SetLimit(int64(pageSize)) // 每页限制 pageSize 个文档
 
 	// 查询结果
 	cursor, err := collection.Find(context.TODO(), filter, findOptions)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch collection items by category: %v", err)
+		return nil, fmt.Errorf("failed to fetch collection items: %v", err)
 	}
 	defer cursor.Close(context.TODO())
 
-	// 遍历查询结果并解码
 	var items []model.BookmarkQuestionModel
 	for cursor.Next(context.TODO()) {
 		var item model.BookmarkQuestionModel

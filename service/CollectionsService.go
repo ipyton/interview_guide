@@ -49,7 +49,8 @@ func GetBookmarkCollections(w http.ResponseWriter, r *http.Request) {
 func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
 	// collectionID := r.URL.Query().Get("collection_id")
 	var err error
-	collectionID, err := strconv.Atoi(r.URL.Query().Get("collection_id"))
+	//collectionID, err := strconv.Atoi(r.URL.Query().Get("collection_id"))
+	//fmt.Println(collectionID)
 	openid := r.Header.Get("openid")
 	if openid == "" {
 		http.Error(w, "openid required", http.StatusBadRequest)
@@ -58,7 +59,7 @@ func GetBookmarkItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error request", http.StatusBadRequest)
 		return
 	}
-	items, err := bookmarkCollectionDAO.GetItemsInCollection(openid, int64(collectionID))
+	items, err := bookmarkCollectionDAO.GetCollectionItemsByCollectionAndTime(openid, -1, true, -1)
 	fmt.Println(items)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -171,6 +172,11 @@ func GetCollectionItemsByTime(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+	collection_id, err := strconv.ParseInt(r.URL.Query().Get("collection_id"), 10, 64)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 
 	isDescending, err := strconv.ParseBool(r.URL.Query().Get("isDescending"))
 	if err != nil {
@@ -185,7 +191,7 @@ func GetCollectionItemsByTime(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(openid)
 	fmt.Println(question_id)
 	fmt.Println(isDescending)
-	items, err := bookmarkCollectionDAO.GetCollectionItemsByTime(openid, question_id, isDescending)
+	items, err := bookmarkCollectionDAO.GetCollectionItemsByCollectionAndTime(openid, question_id, isDescending, collection_id)
 	marshal, err := json.Marshal(JsonResult{Code: 1, Data: *items})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -197,6 +203,12 @@ func GetCollectionItemsByTime(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func GetCollectionItemsByCategory(w http.ResponseWriter, r *http.Request) {
+func GetCollectionItemsByTag(w http.ResponseWriter, r *http.Request) {
+	//openid := r.Header.Get("openid")
+	//collection_id, err := strconv.ParseInt(r.URL.Query().Get("collection_id"), 10, 64)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusBadRequest)
+	//}
+	//bookmarkCollectionDAO.GetCollectionItemsByTime()
 
 }
