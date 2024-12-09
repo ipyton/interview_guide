@@ -113,8 +113,11 @@ func main() {
 	mux.Handle("/voice/delete", AuthMiddleware(http.HandlerFunc(service.DeleteVoiceHandler)))
 	mux.Handle("/voice/generate", AuthMiddleware(http.HandlerFunc(service.GenerateVoiceHandler)))
 
-	mux.Handle("/notification/get_configuration", AuthMiddleware(http.HandlerFunc(service.GenerateVoiceHandler)))
-	mux.Handle("/notification/config", AuthMiddleware(http.HandlerFunc(service.GenerateVoiceHandler)))
+	mux.Handle("/feedback/get", AuthMiddleware(http.HandlerFunc(service.GetFeedback)))
+	mux.Handle("/feedback/send", AuthMiddleware(http.HandlerFunc(service.SendFeedback)))
+
+	//mux.Handle("/notification/get_configuration", AuthMiddleware(http.HandlerFunc(service.GetConfiguration)))
+	//mux.Handle("/notification/config", AuthMiddleware(http.HandlerFunc(service.SetConfiguration)))
 
 	cors := handlers.CORS(handlers.AllowedOrigins([]string{"*"}),
 		handlers.AllowedMethods([]string{"get", "post", "put", "patch", "delete"}),

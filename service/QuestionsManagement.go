@@ -145,13 +145,50 @@ func UpsertQuestionsByFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func AdviceAQuestion(w http.ResponseWriter, r *http.Request) {
+	questionModel := model.AdvisedQuestions{}
+	all, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, "Error reading body", http.StatusInternalServerError)
+	}
+	err = json.Unmarshal(all, &questionModel)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	err = questionImp.AdviceQuestion(questionModel)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, "Error adding questions", http.StatusInternalServerError)
+	}
 
 }
 
 func GetAdvisedQuestions(w http.ResponseWriter, r *http.Request) {
+	questions, err := questionImp.GetAdvisedQuestions()
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, "Error getting questions", http.StatusInternalServerError)
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(questions)
 
 }
 
-func ApproveAQuestion(w http.ResponseWriter, r *http.Request) {
+type ApproveRequest struct {
+	QuestionId int64 `json:"question_id"`
+}
 
+func ApproveAQuestion(w http.ResponseWriter, r *http.Request) {
+	all, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, "Error reading body", http.StatusInternalServerError)
+	}
+	approved := ApproveRequest{}
+	err = json.Unmarshal(all, &approved)
+	if err != nil && approved.QuestionId == 0 {
+		fmt.Println(err.Error())
+		http.Error(w, "Error reading body", http.StatusInternalServerError)
+	}
+	questionImp.ApproveAQuestion(approved.QuestionId)
 }

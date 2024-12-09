@@ -154,3 +154,51 @@ func (impl *QuestionInterfaceImpl) DelQuestion(id int64) error {
 	_, err := collection.DeleteOne(context.TODO(), bson.M{"id": id})
 	return err
 }
+
+func (impl *QuestionInterfaceImpl) AdviceQuestion(question model.AdvisedQuestions) error {
+	var collection = db.MongoClient.Database("interview_guide").Collection("question_review")
+	_, err := collection.InsertOne(context.Background(), question)
+	return err
+}
+
+func (impl *QuestionInterfaceImpl) GetAdvisedQuestions() ([]model.AdvisedQuestions, error) {
+	var collection = db.MongoClient.Database("interview_guide").Collection("question_review")
+	filter := bson.M{}
+	cur, err := collection.Find(context.Background(), filter)
+	var results []model.AdvisedQuestions
+
+	if err != nil {
+		return results, err
+	}
+	defer cur.Close(context.TODO())
+	for cur.Next(context.TODO()) {
+		var result model.AdvisedQuestions
+		if err := cur.Decode(&result); err != nil {
+			log.Fatal(err)
+			return results, err
+		}
+	}
+	return results, cur.Err()
+
+}
+
+func (impl *QuestionInterfaceImpl) ApproveAQuestion(questionId int64) error {
+	var collection = db.MongoClient.Database("interview_guide").Collection("question_review")
+	//var questions_collection = db.MongoClient.Database("interview_guide").Collection("question")
+	filter := bson.M{"question_id": questionId}
+	update := bson.D{
+		{"$set", bson.D{{"review_status", "done"}}},
+	}
+	_, err := collection.UpdateOne(context.Background(), filter, update)
+	questionResult := collection.FindOneAndDelete(context.TODO(), bson.M{"question_id": questionId})
+	var result model.AdvisedQuestions
+	err = questionResult.Decode(&result)
+	if err != nil {
+		return err
+	}
+	err = impl.UpsertQuestion(&result.QuestionModel)
+	if err != nil {
+		return err
+	}
+	return nil
+}

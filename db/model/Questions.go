@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type QuestionModel struct {
 	ID         int64    `gorm:"column:question_id;primaryKey" json:"question_id" bson:"question_id"` // Unique identifier for the question
 	Title      string   `gorm:"column:title;size:50" json:"title" bson:"title"`                      // Title of the question
@@ -15,4 +17,10 @@ type QuestionModel struct {
 	Difficulty string   `gorm:"column:difficulty" json:"difficulty" bson:"difficulty"`
 	Tags       []string `gorm:"column:tags" json:"tags" bson:"tags"` // Tag 1
 
+}
+
+type AdvisedQuestions struct {
+	QuestionModel
+	ReviewStatus     string    `gorm:"column:review_status" json:"review_status" bson:"review_status"`
+	AdvisedTimestamp time.Time `json:"advised_timestamp" bson:"advised_timestamp"`
 }

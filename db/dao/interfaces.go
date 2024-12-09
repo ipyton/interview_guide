@@ -34,6 +34,9 @@ type QuestionInterface interface {
 	QueryQuestions(page int64) ([]model.QuestionModel, error)
 	BatchAdd(questions *[]model.QuestionModel) error
 	GetQuestionsByPaging(lastId int64, classId int64) (*[]model.QuestionModel, error)
+	AdviceQuestion(question model.AdvisedQuestions) error
+	GetAdvisedQuestions() ([]model.AdvisedQuestions, error)
+	ApproveAQuestion(questionId int64) error
 }
 
 type ClassInterface interface {

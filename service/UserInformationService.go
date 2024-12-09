@@ -107,7 +107,7 @@ func UploadAvatar(w http.ResponseWriter, r *http.Request) {
 }
 
 type Rename struct {
-	Name string `json:"newName"`
+	Name string `json:"username"`
 }
 
 func SetUserName(w http.ResponseWriter, r *http.Request) {
