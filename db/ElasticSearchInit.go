@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var Client *elasticsearch.Client
+var ElasticClient *elasticsearch.Client
 
 func InitElasticSearchClient() {
 	var err error
@@ -17,13 +17,13 @@ func InitElasticSearchClient() {
 	}
 	cfg := elasticsearch.Config{
 		Addresses: []string{
-			"https://localhost:9200",
+			"https://192.168.31.75:9200",
 		},
 		Username: "elastic",              // 如果需要
 		Password: "MH2c9MNGKi0YJnpysUX7", // 如果需要
 		CACert:   caCert,
 	}
-	Client, err = elasticsearch.NewClient(cfg)
+	ElasticClient, err = elasticsearch.NewClient(cfg)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

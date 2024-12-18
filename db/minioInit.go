@@ -11,9 +11,9 @@ import (
 var MinioClient *minio.Client
 
 func InitMinio() {
-	endpoint := "localhost:9000"
-	accessKeyID := "minioadmin"
-	secretAccessKey := "minioadmin"
+	endpoint := "192.168.31.75:9000"
+	accessKeyID := "ROOTUSER"
+	secretAccessKey := "CHANGEME123"
 	useSSL := false
 	var err error
 	// Initialize minio client object.

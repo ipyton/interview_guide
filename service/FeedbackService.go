@@ -35,3 +35,7 @@ func SendFeedback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error adding questions", http.StatusInternalServerError)
 	}
 }
+
+func ReplyFeedback(w http.ResponseWriter, r *http.Request) {
+
+}

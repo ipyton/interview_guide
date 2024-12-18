@@ -152,6 +152,7 @@ func AdviceAQuestion(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error reading body", http.StatusInternalServerError)
 	}
 	err = json.Unmarshal(all, &questionModel)
+	fmt.Println(questionModel)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

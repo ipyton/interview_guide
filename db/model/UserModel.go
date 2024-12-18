@@ -25,3 +25,6 @@ type UserStatus struct {
 	LastLogin    time.Time `json:"last_login" bson:"last_login"`       // 上次登录时间
 	LastLoginIP  string    `json:"last_login_ip" bson:"last_login_ip"` // 上次登录IP
 }
+
+type UserHistory struct {
+}

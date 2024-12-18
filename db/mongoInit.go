@@ -8,14 +8,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const uri = "mongodb://localhost:27017/&replicaSet=rs0"
-
 var MongoClient *mongo.Client
+
+const applyurl = "mongodb://192.168.31.75:27017/?replicaSet=rs0"
 
 func InitMongo() {
 
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
+	//applyurl := fmt.Sprintf("mongodb://%s:%s/", "192.168.31.75", "27017")
+
+	//credential := options.Credential{
+	//	AuthMechanism: "SCRAM-SHA-256",
+	//	// AuthMechanism: "SCRAM-SHA-1",
+	//	Username:   "admin",
+	//	Password:   "password",
+	//	AuthSource: "admin",
+	//}
+
+	opts := options.Client().ApplyURI(applyurl).SetServerAPIOptions(serverAPI)
+	//.SetAuth(credential)
+
 	// Create a new client and connect to the server
 	var err error
 	MongoClient, err = mongo.Connect(context.TODO(), opts)

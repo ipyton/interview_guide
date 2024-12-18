@@ -76,6 +76,8 @@ func main() {
 	mux.Handle("/questions/insert_by_file", AuthMiddleware(http.HandlerFunc(service.UpsertQuestionsByFile)))
 	mux.Handle("/questions/search", AuthMiddleware(http.HandlerFunc(service.GetResults)))
 	mux.Handle("/questions/search/test", AuthMiddleware(http.HandlerFunc(service.Testing)))
+	mux.Handle("/questions/search/suggestions", AuthMiddleware(http.HandlerFunc(service.GetSuggestions)))
+
 	//
 	mux.Handle("/questions/advice/get", AuthMiddleware(http.HandlerFunc(service.GetAdvisedQuestions)))
 	mux.Handle("/questions/advice/approve", AuthMiddleware(http.HandlerFunc(service.ApproveAQuestion)))
@@ -114,7 +116,11 @@ func main() {
 	mux.Handle("/voice/generate", AuthMiddleware(http.HandlerFunc(service.GenerateVoiceHandler)))
 
 	mux.Handle("/feedback/get", AuthMiddleware(http.HandlerFunc(service.GetFeedback)))
+	mux.Handle("/feedback/reply", AuthMiddleware(http.HandlerFunc(service.ReplyFeedback)))
 	mux.Handle("/feedback/send", AuthMiddleware(http.HandlerFunc(service.SendFeedback)))
+
+	//mux.Handle("/statistics/get", AuthMiddleware(http.HandlerFunc(service.GetStatistics)))
+	//mux.Handle("/statistics/set", AuthMiddleware(http.HandlerFunc(service.SetStatistics)))
 
 	//mux.Handle("/notification/get_configuration", AuthMiddleware(http.HandlerFunc(service.GetConfiguration)))
 	//mux.Handle("/notification/config", AuthMiddleware(http.HandlerFunc(service.SetConfiguration)))

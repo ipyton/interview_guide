@@ -75,7 +75,7 @@ func Testing(w http.ResponseWriter, r *http.Request) {
 		Body:       bytes.NewReader(reqBody),
 		Refresh:    "true",
 	}
-	res, err := request.Do(context.Background(), db.Client)
+	res, err := request.Do(context.Background(), db.ElasticClient)
 	if err != nil {
 		log.Fatalf("Error indexing document: %s", err.Error())
 	}
@@ -88,5 +88,34 @@ func Testing(w http.ResponseWriter, r *http.Request) {
 		// 打印出返回的ID
 		fmt.Printf("[%s] Document indexed successfully ID=%s\n", res.Status(), question.ID)
 	}
+}
+
+type SuggestionOption struct {
+	Text    string      `json:"text"`
+	Score   float64     `json:"score"`
+	Payload interface{} `json:"payload"`
+}
+
+type SuggestResponse struct {
+	Suggest map[string][]struct {
+		Text    string             `json:"text"`
+		Offset  int                `json:"offset"`
+		Length  int                `json:"length"`
+		Options []SuggestionOption `json:"options"`
+	} `json:"suggest"`
+}
+
+func GetSuggestions(w http.ResponseWriter, r *http.Request) {
+	keyword := r.URL.Query().Get("keyword")
+	suggestions, err := search.GetSuggestions(keyword)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	defer r.Body.Close()
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(suggestions)
 
 }
