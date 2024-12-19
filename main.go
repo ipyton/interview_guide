@@ -73,6 +73,9 @@ func main() {
 	mux.Handle("/questions/page/get/details", AuthMiddleware(http.HandlerFunc(service.GetQuestionByIdHandler)))
 	//mux.Handle("/questions/getById", AuthMiddleware(http.HandlerFunc(service.GetQuestionsByIdHandler)))
 	mux.Handle("/questions/upsert", AuthMiddleware(http.HandlerFunc(service.UpsertQuestions)))
+	mux.Handle("/questions/rate", AuthMiddleware(http.HandlerFunc(service.Rate)))
+	mux.Handle("/questions/getRate", AuthMiddleware(http.HandlerFunc(service.GetRatings)))
+	mux.Handle("/questions/see_before", AuthMiddleware(http.HandlerFunc(service.SeeBefore)))
 	mux.Handle("/questions/insert_by_file", AuthMiddleware(http.HandlerFunc(service.UpsertQuestionsByFile)))
 	mux.Handle("/questions/search", AuthMiddleware(http.HandlerFunc(service.GetResults)))
 	mux.Handle("/questions/search/test", AuthMiddleware(http.HandlerFunc(service.Testing)))
@@ -82,6 +85,7 @@ func main() {
 	mux.Handle("/questions/advice/get", AuthMiddleware(http.HandlerFunc(service.GetAdvisedQuestions)))
 	mux.Handle("/questions/advice/approve", AuthMiddleware(http.HandlerFunc(service.ApproveAQuestion)))
 	mux.Handle("/questions/advice/advice", AuthMiddleware(http.HandlerFunc(service.AdviceAQuestion)))
+	mux.Handle("/questions/advice/reject", AuthMiddleware(http.HandlerFunc(service.RejectQuestion)))
 
 	//all
 	mux.Handle("/collections/collection/get_items_by_collect_time", AuthMiddleware(http.HandlerFunc(service.GetBookmarkItems)))

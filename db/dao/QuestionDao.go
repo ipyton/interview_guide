@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"time"
 	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/db/model"
 )
@@ -157,8 +159,25 @@ func (impl *QuestionInterfaceImpl) DelQuestion(id int64) error {
 
 func (impl *QuestionInterfaceImpl) AdviceQuestion(question model.AdvisedQuestions) error {
 	var collection = db.MongoClient.Database("interview_guide").Collection("question_review")
-	_, err := collection.InsertOne(context.Background(), question)
-	return err
+	value, _ := getNextSequenceValue("questions")
+	question.ID = value
+	// 显式地转换 question 对象为 BSON 格式
+	bsonData, err := bson.Marshal(question)
+	if err != nil {
+		log.Printf("Error marshalling question to BSON: %s", err)
+		return err
+	}
+
+	// 执行插入操作
+	_, err = collection.InsertOne(context.Background(), bsonData)
+	if err != nil {
+		log.Printf("Error inserting question into MongoDB: %s", err)
+		return err
+	}
+
+	// 如果插入成功，返回 nil
+	fmt.Println("Question inserted successfully!")
+	return nil
 }
 
 func (impl *QuestionInterfaceImpl) GetAdvisedQuestions() ([]model.AdvisedQuestions, error) {
@@ -177,9 +196,17 @@ func (impl *QuestionInterfaceImpl) GetAdvisedQuestions() ([]model.AdvisedQuestio
 			log.Fatal(err)
 			return results, err
 		}
+		results = append(results, result)
 	}
 	return results, cur.Err()
 
+}
+
+func (impl *QuestionInterfaceImpl) RejectQuestion(questionId int64) error {
+	var collection = db.MongoClient.Database("interview_guide").Collection("question_review")
+	filter := bson.M{"question_id": questionId}
+	_, err := collection.DeleteOne(context.Background(), filter)
+	return err
 }
 
 func (impl *QuestionInterfaceImpl) ApproveAQuestion(questionId int64) error {
@@ -199,6 +226,153 @@ func (impl *QuestionInterfaceImpl) ApproveAQuestion(questionId int64) error {
 	err = impl.UpsertQuestion(&result.QuestionModel)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (impl *QuestionInterfaceImpl) RateQuestion(userRate model.UserRate) error {
+	// Add the timestamp if not present
+	if userRate.TimeStamp.IsZero() {
+		userRate.TimeStamp = time.Now()
+	}
+
+	// Retrieve the collection for user ratings and total ratings
+	userRatingsCollection := db.MongoClient.Database("interview_guide").Collection("userRatings")
+	totalRatingsCollection := db.MongoClient.Database("interview_guide").Collection("totalRatings")
+
+	// Check if this user has already rated
+	filter := bson.M{"openid": userRate.OpenId}
+	var existingRate model.UserRate
+	err := userRatingsCollection.FindOne(nil, filter).Decode(&existingRate)
+
+	if err == mongo.ErrNoDocuments {
+		// New rating, insert into userRatings collection
+		_, err := userRatingsCollection.InsertOne(nil, userRate)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+	} else if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		// User already rated, update their rating
+		update := bson.M{"$set": bson.M{"rate": userRate.Rate, "timeStamp": userRate.TimeStamp}}
+		_, err := userRatingsCollection.UpdateOne(nil, filter, update)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+	}
+
+	// Update the total ratings for the entity being rated
+	// Assume "entityID" is passed with the rating, or set a default for now
+	entityID := "exampleEntityID" // You would probably get this from the request body or params
+
+	// Query the total ratings for the entity
+	totalRatingsFilter := bson.M{"entityID": entityID}
+	var totalRates model.TotalRates
+	err = totalRatingsCollection.FindOne(nil, totalRatingsFilter).Decode(&totalRates)
+
+	if err == mongo.ErrNoDocuments {
+		// No total ratings found, create a new record
+		totalRates = model.TotalRates{Count: 1, TotalStars: int64(userRate.Rate)}
+		_, err := totalRatingsCollection.InsertOne(nil, bson.M{
+			"entityID":   entityID,
+			"count":      totalRates.Count,
+			"totalStars": totalRates.TotalStars,
+		})
+		if err != nil {
+			fmt.Println(err.Error())
+			//http.Error(writer, fmt.Sprintf("Failed to insert total ratings: %s", err), http.StatusInternalServerError)
+			return err
+		}
+	} else if err != nil {
+		fmt.Println(err.Error())
+		//http.Error(writer, fmt.Sprintf("Failed to query total ratings: %s", err), http.StatusInternalServerError)
+		return err
+	} else {
+		// Update total ratings
+		totalRates.Count++
+		totalRates.TotalStars += int64(userRate.Rate)
+
+		update := bson.M{
+			"$set": bson.M{
+				"count":      totalRates.Count,
+				"totalStars": totalRates.TotalStars,
+			},
+		}
+		_, err := totalRatingsCollection.UpdateOne(nil, totalRatingsFilter, update)
+		if err != nil {
+			//http.Error(writer, fmt.Sprintf("Failed to update total ratings: %s", err), http.StatusInternalServerError)
+			fmt.Println(err.Error())
+			return err
+		}
+	}
+	return nil
+}
+
+func (impl *QuestionInterfaceImpl) GetRatings(questionId int64) (model.RatingsResponse, error) {
+	totalRatingsCollection := db.MongoClient.Database("interview_guide").Collection("totalRatings")
+
+	// Query to find the total ratings for the given entity
+	filter := bson.M{"question_id": questionId}
+	var totalRates model.TotalRates
+	var result model.RatingsResponse
+	err := totalRatingsCollection.FindOne(nil, filter).Decode(&totalRates)
+
+	if err != nil {
+		// If no document found for the entityID, return a message saying no ratings found
+		fmt.Println(err.Error())
+		return result, err
+	}
+
+	result.QuestionId = totalRates.QuestionId
+
+	// Calculate the average rating (Rate)
+	if totalRates.Count > 0 {
+		// Calculate rate: TotalStars / Count
+		averageRate := float64(totalRates.TotalStars) / float64(totalRates.Count)
+		result.Stars = averageRate
+
+	} else {
+		result.Stars = 0
+	}
+	return result, err
+}
+
+func (impl *QuestionInterfaceImpl) SeeBefore(seeBefore model.SeeBeforeCount) error {
+	// Retrieve the collection for question views
+	questionViewsCollection := db.MongoClient.Database("interview_guide").Collection("questionViews")
+
+	// Query to check if this question has a view count
+	filter := bson.M{"questionId": seeBefore.QuestionId}
+	var existingCount model.SeeBeforeCount
+	err := questionViewsCollection.FindOne(nil, filter).Decode(&existingCount)
+
+	if err == mongo.ErrNoDocuments {
+		// No document found for this questionId, so create a new record with count = 1
+		_, err := questionViewsCollection.InsertOne(nil, bson.M{
+			"questionId": seeBefore.QuestionId,
+			"count":      1,
+		})
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+	} else if err != nil {
+		fmt.Println(err.Error())
+		return err
+	} else {
+		// Question found, increment the count
+		update := bson.M{
+			"$inc": bson.M{"count": 1},
+		}
+		_, err := questionViewsCollection.UpdateOne(nil, filter, update)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
 	}
 	return nil
 }

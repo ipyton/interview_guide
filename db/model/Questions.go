@@ -24,3 +24,24 @@ type AdvisedQuestions struct {
 	ReviewStatus     string    `gorm:"column:review_status" json:"review_status" bson:"review_status"`
 	AdvisedTimestamp time.Time `json:"advised_timestamp" bson:"advised_timestamp"`
 }
+
+type TotalRates struct {
+	QuestionId int64 `json:"question_id"`
+	Count      int64 `json:"count"`
+	TotalStars int64 `json:"total_stars"`
+}
+
+type UserRate struct {
+	OpenId    string    `json:"openid"`
+	Rate      float32   `json:"rate"`
+	TimeStamp time.Time `json:"time"`
+}
+
+type SeeBeforeCount struct {
+	QuestionId int64 `json:"question_id"`
+	Count      int64 `json:"count"`
+}
+type RatingsResponse struct {
+	Stars      float64 `json:"stars"`
+	QuestionId int64   `json:"questionId"`
+}

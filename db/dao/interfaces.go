@@ -37,6 +37,10 @@ type QuestionInterface interface {
 	AdviceQuestion(question model.AdvisedQuestions) error
 	GetAdvisedQuestions() ([]model.AdvisedQuestions, error)
 	ApproveAQuestion(questionId int64) error
+	RejectQuestion(questionId int64) error
+	RateQuestion(userRate model.UserRate) error
+	GetRatings(questionId int64) (model.RatingsResponse, error)
+	SeeBefore(seeBefore model.SeeBeforeCount) error
 }
 
 type ClassInterface interface {

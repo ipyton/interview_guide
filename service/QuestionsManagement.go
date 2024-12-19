@@ -176,7 +176,27 @@ func GetAdvisedQuestions(w http.ResponseWriter, r *http.Request) {
 }
 
 type ApproveRequest struct {
-	QuestionId int64 `json:"question_id"`
+	QuestionId   int64  `json:"question_id"`
+	RejectReason string `json:"reject_reason""`
+}
+
+func RejectQuestion(w http.ResponseWriter, r *http.Request) {
+	all, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, "Error getting Questions", http.StatusBadRequest)
+	}
+	request := ApproveRequest{}
+	err = json.Unmarshal(all, &request)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, "Bad Format", http.StatusBadRequest)
+	}
+	err = questionImp.RejectQuestion(request.QuestionId)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, "Internal Error", http.StatusInternalServerError)
+	}
 }
 
 func ApproveAQuestion(w http.ResponseWriter, r *http.Request) {

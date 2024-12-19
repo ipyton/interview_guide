@@ -49,3 +49,58 @@ func GetQuestionsByTag(writer http.ResponseWriter, request *http.Request) {
 func GetHottestQuestionHandler(writer http.ResponseWriter, request *http.Request) {
 
 }
+
+func Rate(writer http.ResponseWriter, request *http.Request) {
+	// Parse the JSON body from the incoming request
+	var userRate model.UserRate
+	decoder := json.NewDecoder(request.Body)
+	if err := decoder.Decode(&userRate); err != nil {
+		http.Error(writer, fmt.Sprintf("Failed to decode request body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	err := questionImp.RateQuestion(userRate)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	// Send response
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	response := map[string]string{"status": "success"}
+	json.NewEncoder(writer).Encode(response)
+}
+
+func GetRatings(writer http.ResponseWriter, request *http.Request) {
+	questionIdStr := request.URL.Query().Get("questionId")
+	if questionIdStr == "" {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	question_id, err := strconv.ParseInt(questionIdStr, 10, 64)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+	}
+	ratings, err := questionImp.GetRatings(question_id)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(writer).Encode(ratings)
+
+}
+
+func SeeBefore(writer http.ResponseWriter, request *http.Request) {
+	var seeBefore model.SeeBeforeCount
+	decoder := json.NewDecoder(request.Body)
+	if err := decoder.Decode(&seeBefore); err != nil {
+		http.Error(writer, fmt.Sprintf("Failed to decode request body: %s", err), http.StatusBadRequest)
+		return
+	}
+	questionImp.SeeBefore(seeBefore)
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+	response := map[string]string{"status": "success"}
+	json.NewEncoder(writer).Encode(response)
+}
