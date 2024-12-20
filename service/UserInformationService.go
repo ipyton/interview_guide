@@ -70,11 +70,8 @@ func GetUserAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 
-	_, err = io.Copy(w, file)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	io.Copy(w, file)
+
 }
 
 func UploadAvatar(w http.ResponseWriter, r *http.Request) {

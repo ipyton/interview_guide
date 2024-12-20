@@ -83,6 +83,6 @@ type FileManager interface {
 
 type SearchDaoInterface interface {
 	UpsertQuestionIndex(question model.QuestionModel) error
-	SearchQuestions(keyword string) (model.QuestionModel, error)
+	SearchQuestions(keyword string, pageSize int64, page int64) (model.QuestionModel, error)
 	GetSuggestions(keyword string) (SuggestResponse, error)
 }

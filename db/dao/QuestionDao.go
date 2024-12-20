@@ -163,6 +163,7 @@ func (impl *QuestionInterfaceImpl) AdviceQuestion(question model.AdvisedQuestion
 	question.ID = value
 	// 显式地转换 question 对象为 BSON 格式
 	bsonData, err := bson.Marshal(question)
+	question.ReviewStatus = "waited"
 	if err != nil {
 		log.Printf("Error marshalling question to BSON: %s", err)
 		return err
@@ -182,7 +183,7 @@ func (impl *QuestionInterfaceImpl) AdviceQuestion(question model.AdvisedQuestion
 
 func (impl *QuestionInterfaceImpl) GetAdvisedQuestions() ([]model.AdvisedQuestions, error) {
 	var collection = db.MongoClient.Database("interview_guide").Collection("question_review")
-	filter := bson.M{}
+	filter := bson.M{"review_status": "waited"}
 	cur, err := collection.Find(context.Background(), filter)
 	var results []model.AdvisedQuestions
 

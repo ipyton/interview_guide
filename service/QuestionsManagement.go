@@ -177,7 +177,7 @@ func GetAdvisedQuestions(w http.ResponseWriter, r *http.Request) {
 
 type ApproveRequest struct {
 	QuestionId   int64  `json:"question_id"`
-	RejectReason string `json:"reject_reason""`
+	RejectReason string `json:"reject_reason"`
 }
 
 func RejectQuestion(w http.ResponseWriter, r *http.Request) {

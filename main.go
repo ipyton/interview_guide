@@ -120,6 +120,7 @@ func main() {
 	mux.Handle("/voice/generate", AuthMiddleware(http.HandlerFunc(service.GenerateVoiceHandler)))
 
 	mux.Handle("/feedback/get", AuthMiddleware(http.HandlerFunc(service.GetFeedback)))
+	mux.Handle("/feedback/delete", AuthMiddleware(http.HandlerFunc(service.DeleteFeedback)))
 	mux.Handle("/feedback/reply", AuthMiddleware(http.HandlerFunc(service.ReplyFeedback)))
 	mux.Handle("/feedback/send", AuthMiddleware(http.HandlerFunc(service.SendFeedback)))
 

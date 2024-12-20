@@ -1,0 +1,64 @@
+PUT /interview-questions
+{
+  "settings": {
+    "analysis": {
+      "tokenizer": {
+        "ik_max_word": {
+          "type": "ik_max_word"
+        }
+      },
+      "analyzer": {
+        "ik_analyzer": {
+          "type": "custom",
+          "tokenizer": "ik_max_word"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "ik_analyzer"
+      },
+      "class_id": {
+        "type": "integer"
+      },
+      "type": {
+        "type": "keyword"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "ik_analyzer"
+      },
+      "details": {
+        "type": "text",
+        "analyzer": "ik_analyzer"
+      },
+      "author_id": {
+        "type": "keyword"
+      },
+      "author_name": {
+        "type": "keyword"
+      },
+      "avatar": {
+        "type": "keyword"
+      },
+      "likes": {
+        "type": "integer"
+      },
+      "views": {
+        "type": "integer"
+      },
+      "difficulty": {
+        "type": "integer"
+      },
+      "tags": {
+        "type": "keyword"
+      },
+      "suggest": {
+        "type": "completion"
+      }
+    }
+  }
+}

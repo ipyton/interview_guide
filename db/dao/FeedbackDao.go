@@ -11,8 +11,10 @@ import (
 type FeedbackDao struct {
 }
 
+var counter = CounterImpl{}
+
 func (FeedbackDao) GetFeedback() ([]model.Feedback, error) {
-	var collection = db.MongoClient.Database("interview_guide").Collection("feedback")
+	var collection = db.MongoClient.Database("interview_guide").Collection("feed")
 	filter := bson.M{}
 	cur, err := collection.Find(context.Background(), filter)
 	var results []model.Feedback
@@ -22,18 +24,29 @@ func (FeedbackDao) GetFeedback() ([]model.Feedback, error) {
 	}
 	defer cur.Close(context.TODO())
 	for cur.Next(context.TODO()) {
-		var result model.AdvisedQuestions
+		var result model.Feedback
 		if err := cur.Decode(&result); err != nil {
 			log.Fatal(err)
 			return results, err
 		}
+		results = append(results, result)
 	}
 	return results, cur.Err()
 }
 
 func (FeedbackDao) SaveFeedback(feedback model.Feedback) error {
 	var collection = db.MongoClient.Database("interview_guide").Collection("feed")
+	increase, _ := counter.GetAndIncrease("feed")
+	feedback.Id = increase
 	//var questions_collection = db.MongoClient.Database("interview_guide").Collection("question")
 	_, err := collection.InsertOne(context.Background(), feedback)
 	return err
+}
+
+func (FeedbackDao) DeleteFeedback(id int64) {
+	var collection = db.MongoClient.Database("interview_guide").Collection("feed")
+	filter := bson.M{
+		"id": id,
+	}
+	collection.DeleteOne(context.TODO(), filter)
 }

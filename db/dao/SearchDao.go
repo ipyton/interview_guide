@@ -10,6 +10,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"unicode"
 	"wxcloudrun-golang/db"
 	"wxcloudrun-golang/db/model"
 )
@@ -19,9 +20,10 @@ type SearchDaoImpl struct {
 }
 
 type SuggestionOption struct {
-	Text    string      `json:"text"`
-	Score   float64     `json:"score"`
-	Payload interface{} `json:"payload"`
+	Text    string              `json:"text"`
+	Score   float64             `json:"score"`
+	Payload interface{}         `json:"payload"`
+	Source  model.QuestionModel `json:"_source"`
 }
 
 type SuggestResponse struct {
@@ -34,30 +36,59 @@ type SuggestResponse struct {
 }
 
 func (this *SearchDaoImpl) GetSuggestions(keyword string) (SuggestResponse, error) {
-	reqBody := fmt.Sprintf(`{
-		"suggest": {
-			"text": "%s", 
-			"completion": {
-				"field": "suggest",
-				"size": 5
-			}
-		}
-	}`, keyword)
+	fmt.Println("Keyword:", keyword)
+
+	// 构建请求体
+	reqBody := map[string]interface{}{
+		"suggest": map[string]interface{}{
+			"song-suggest": map[string]interface{}{
+				"prefix": keyword,
+				"completion": map[string]interface{}{
+					"field": "suggest",
+				},
+			},
+		},
+	}
+
+	// 将请求体转换为 JSON 字符串
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		log.Fatalf("Error marshalling the request body: %s", err)
+		return SuggestResponse{}, err
+	}
+
+	// 调用 Elasticsearch 的搜索 API
 	response, err := db.ElasticClient.Search(
 		db.ElasticClient.Search.WithContext(context.Background()),
 		db.ElasticClient.Search.WithIndex("interview-questions"),
-		db.ElasticClient.Search.WithBody(strings.NewReader(reqBody)),
+		db.ElasticClient.Search.WithBody(bytes.NewReader(body)), // 使用 JSON 字符串或字节切片
 		db.ElasticClient.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
 		log.Fatalf("Error executing the query: %s", err)
+		return SuggestResponse{}, err
 	}
+	defer response.Body.Close() // 记得关闭响应体
+
+	// 打印响应的状态码，便于调试
+	fmt.Println("Response Status:", response.Status)
+
+	// 打印响应的内容
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("Error reading response body: %s", err)
+	}
+	fmt.Println("Response Body:", string(bodyBytes))
+
+	// 解析 JSON 响应
 	var result SuggestResponse
-	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
 		log.Fatalf("Error decoding the response body: %s", err)
-		return result, err
+		return SuggestResponse{}, err
 	}
-	return result, err
+
+	// 返回解析后的结果
+	return result, nil
 }
 
 func removeDuplicates(input []string) []string {
@@ -73,14 +104,39 @@ func removeDuplicates(input []string) []string {
 
 	return result
 }
+func escapeIllegalChars(input string) string {
+	var result bytes.Buffer
+
+	for _, r := range input {
+		// 如果字符是控制字符（包括换行符、回车符等），我们会将其转义
+		if unicode.IsControl(r) {
+			switch r {
+			case '\n':
+				result.WriteString("\\n")
+			case '\r':
+				result.WriteString("\\r")
+			case '\t':
+				result.WriteString("\\t")
+			default:
+				result.WriteString("\\u" + strings.ToUpper(string(r)))
+			}
+		} else {
+			// 非控制字符直接写入结果
+			result.WriteRune(r)
+		}
+	}
+
+	return result.String()
+}
 
 // 使用 Elasticsearch 自带的 _analyze API 分析文本并返回分词结果
 func analyzeText(text string) ([]string, error) {
 	// 构造 _analyze 请求
+	text = escapeIllegalChars(text)
 	analyzeRequest := esapi.IndicesAnalyzeRequest{
-		Index:  "interview-questions",                                                             // 索引名称
-		Body:   strings.NewReader(fmt.Sprintf(`{"text": "%s", "analyzer": "ik_max_word"}`, text)), // 要分析的文本
-		Pretty: true,                                                                              // 使用 ik_max_word 分词器
+		Index:  "interview-questions",                                                          // 索引名称
+		Body:   strings.NewReader(fmt.Sprintf(`{"text": "%s", "analyzer": "ik_smart"}`, text)), // 要分析的文本
+		Pretty: true,                                                                           // 使用 ik_max_word 分词器
 	}
 
 	// 执行 _analyze 请求
@@ -99,6 +155,7 @@ func analyzeText(text string) ([]string, error) {
 	// 获取分词结果
 	tokens, ok := result["tokens"].([]interface{})
 	if !ok {
+		fmt.Println(result)
 		return nil, fmt.Errorf("unexpected response format")
 	}
 
@@ -116,25 +173,40 @@ func analyzeText(text string) ([]string, error) {
 	return words, nil
 }
 
+func concatAdjacentStrings(strs []string) []string {
+	var result []string
+
+	// 确保有至少两个字符串可供拼接
+	for i := 0; i < len(strs)-1; i++ {
+		// 拼接当前字符串和下一个字符串
+		concatenated := strs[i] + strs[i+1]
+		result = append(result, concatenated)
+	}
+
+	return result
+}
+
 func (this *SearchDaoImpl) UpsertQuestionIndex(question model.QuestionModel) error {
 	// 初始化 jieba 分词器
 
 	// 对 title, content, details 字段进行分词
 	titleTokens, err := analyzeText(question.Title) // 使用全模式分词
-	contentTokens, err := analyzeText(question.Content)
+	//contentTokens, err := analyzeText(question.Content)
 	detailsTokens, err := analyzeText(question.Details)
 	if err != nil {
 
 		return err
 	}
 	// 将分词结果转换为数组形式，用于 suggest 字段
-	suggestInput := append(append([]string{}, titleTokens...), contentTokens...)
+	suggestInput := append([]string{}, titleTokens...)
 	suggestInput = append(suggestInput, detailsTokens...)
+	suggestInput = concatAdjacentStrings(suggestInput)
 	suggestInput = removeDuplicates(suggestInput)
 	// 准备 Elasticsearch 请求体
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"doc": map[string]interface{}{
 			"title":       question.Title,
+			"question_id": question.ID,
 			"class_id":    question.ClassId,
 			"type":        question.Type,
 			"content":     question.Content,
@@ -152,6 +224,7 @@ func (this *SearchDaoImpl) UpsertQuestionIndex(question model.QuestionModel) err
 		},
 		"upsert": map[string]interface{}{
 			"title":       question.Title,
+			"question_id": question.ID,
 			"class_id":    question.ClassId,
 			"type":        question.Type,
 			"content":     question.Content,
@@ -212,8 +285,10 @@ type SearchResult struct {
 	} `json:"hits"`
 }
 
-func (this *SearchDaoImpl) SearchQuestions(keyword string) (*SearchResult, error) {
+func (this *SearchDaoImpl) SearchQuestions(keyword string, pageSize int64, page int64) (*SearchResult, error) {
+	from := (page - 1) * pageSize
 
+	// Construct the search query with pagination (from and size)
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"multi_match": map[string]interface{}{
@@ -221,16 +296,20 @@ func (this *SearchDaoImpl) SearchQuestions(keyword string) (*SearchResult, error
 				"fields": []string{"title", "details", "author_name", "content"},
 			},
 		},
+		"size": pageSize, // Number of results per page
+		"from": from,     // The starting point of the next page of results
 	}
 
+	// Marshal the query to JSON format
 	searchQuery, err := json.Marshal(query)
 	if err != nil {
 		log.Fatal("Error marshaling query: ", err)
 	}
 
+	// Execute the search query
 	res, err := db.ElasticClient.Search(
 		db.ElasticClient.Search.WithContext(context.Background()),
-		db.ElasticClient.Search.WithIndex("interview-questions"), // 替换为你的索引名称
+		db.ElasticClient.Search.WithIndex("interview-questions"), // Replace with your index name
 		db.ElasticClient.Search.WithBody(strings.NewReader(string(searchQuery))),
 		db.ElasticClient.Search.WithPretty(),
 	)
@@ -239,7 +318,7 @@ func (this *SearchDaoImpl) SearchQuestions(keyword string) (*SearchResult, error
 	}
 	defer res.Body.Close()
 
-	// 输出搜索结果
+	// Output the search results
 	if res.IsError() {
 		log.Printf("Error: %s\n", res.String())
 		body, err := io.ReadAll(res.Body)
@@ -261,14 +340,14 @@ func (this *SearchDaoImpl) SearchQuestions(keyword string) (*SearchResult, error
 			return nil, err
 		}
 
-		// 这里处理返回的结果
+		// Process the returned results
 		fmt.Println("Total hits:", result.Hits.Total.Value)
 		for _, hit := range result.Hits.Hits {
 			fmt.Printf("Found document: %+v\n", hit.Source)
 		}
 		return &result, nil
-
 	}
+
 	return nil, nil
 
 }

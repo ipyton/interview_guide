@@ -16,6 +16,7 @@ import (
 
 type SearchRequest struct {
 	Keyword string `json:"keyword"`
+	Page    int64  `json:"page"`
 }
 
 var search dao.SearchDaoImpl
@@ -30,7 +31,7 @@ func GetResults(w http.ResponseWriter, r *http.Request) {
 		}
 		err = json.Unmarshal(body, &request)
 		fmt.Println(request.Keyword)
-		questions, err := search.SearchQuestions(request.Keyword)
+		questions, err := search.SearchQuestions(request.Keyword, 10, request.Page)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
