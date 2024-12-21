@@ -26,22 +26,23 @@ type AdvisedQuestions struct {
 }
 
 type TotalRates struct {
-	QuestionId int64 `json:"question_id"`
-	Count      int64 `json:"count"`
-	TotalStars int64 `json:"total_stars"`
+	QuestionId int64 `json:"question_id" bson:"question_id"` // JSON 和 BSON 标签都添加
+	Count      int64 `json:"count" bson:"count"`
+	TotalStars int64 `json:"total_stars" bson:"total_stars"`
 }
 
 type UserRate struct {
-	OpenId    string    `json:"openid"`
-	Rate      float32   `json:"rate"`
-	TimeStamp time.Time `json:"time"`
+	OpenId     string    `json:"openid" bson:"openid"` // JSON 和 BSON 标签都添加
+	QuestionId int64     `json:"question_id" bson:"question_id"`
+	Rate       float64   `json:"rate" bson:"rate"`
+	TimeStamp  time.Time `json:"time" bson:"time"`
 }
 
 type SeeBeforeCount struct {
-	QuestionId int64 `json:"question_id"`
-	Count      int64 `json:"count"`
+	QuestionId int64 `json:"question_id" bson:"question_id"` // JSON 和 BSON 标签都添加
 }
+
 type RatingsResponse struct {
-	Stars      float64 `json:"stars"`
-	QuestionId int64   `json:"questionId"`
+	Rate       float64 `json:"rate" bson:"rate"` // JSON 和 BSON 标签都添加
+	QuestionId int64   `json:"question_id" bson:"question_id"`
 }

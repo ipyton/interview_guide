@@ -53,6 +53,8 @@ func GetHottestQuestionHandler(writer http.ResponseWriter, request *http.Request
 func Rate(writer http.ResponseWriter, request *http.Request) {
 	// Parse the JSON body from the incoming request
 	var userRate model.UserRate
+	openid := request.URL.Query().Get("openid")
+	userRate.OpenId = openid
 	decoder := json.NewDecoder(request.Body)
 	if err := decoder.Decode(&userRate); err != nil {
 		http.Error(writer, fmt.Sprintf("Failed to decode request body: %s", err), http.StatusBadRequest)

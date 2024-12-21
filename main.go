@@ -61,6 +61,7 @@ func main() {
 	db.InitMongo()
 	db.InitMinio()
 	db.InitElasticSearchClient()
+	db.InitRedis()
 	mux := http.NewServeMux()
 
 	// 定义路由及对应的处理器

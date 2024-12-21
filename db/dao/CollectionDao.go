@@ -95,7 +95,7 @@ func (dao *CollectionQuestionInterfaceImpl) DeleteBookMarkQuestion(userId string
 
 	// 创建查询条件
 	filter := bson.M{
-		"user_id":       userId,       // 用户 ID
+		"openid":        userId,       // 用户 ID
 		"collection_id": collectionId, // 集合 ID
 		"question_id":   questionId,   // 问题 ID
 	}

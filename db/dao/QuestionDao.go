@@ -232,6 +232,7 @@ func (impl *QuestionInterfaceImpl) ApproveAQuestion(questionId int64) error {
 }
 
 func (impl *QuestionInterfaceImpl) RateQuestion(userRate model.UserRate) error {
+	fmt.Println(userRate)
 	// Add the timestamp if not present
 	if userRate.TimeStamp.IsZero() {
 		userRate.TimeStamp = time.Now()
@@ -242,7 +243,7 @@ func (impl *QuestionInterfaceImpl) RateQuestion(userRate model.UserRate) error {
 	totalRatingsCollection := db.MongoClient.Database("interview_guide").Collection("totalRatings")
 
 	// Check if this user has already rated
-	filter := bson.M{"openid": userRate.OpenId}
+	filter := bson.M{"openid": userRate.OpenId, "question_id": userRate.QuestionId}
 	var existingRate model.UserRate
 	err := userRatingsCollection.FindOne(nil, filter).Decode(&existingRate)
 
@@ -250,28 +251,29 @@ func (impl *QuestionInterfaceImpl) RateQuestion(userRate model.UserRate) error {
 		// New rating, insert into userRatings collection
 		_, err := userRatingsCollection.InsertOne(nil, userRate)
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println("Error inserting new rating:", err.Error())
 			return err
 		}
 	} else if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("Error querying existing rating:", err.Error())
 		return err
 	} else {
 		// User already rated, update their rating
-		update := bson.M{"$set": bson.M{"rate": userRate.Rate, "timeStamp": userRate.TimeStamp}}
-		_, err := userRatingsCollection.UpdateOne(nil, filter, update)
-		if err != nil {
-			fmt.Println(err.Error())
-			return err
-		}
+		//update := bson.M{"$set": bson.M{"rate": userRate.Rate, "timeStamp": userRate.TimeStamp}}
+		//_, err := userRatingsCollection.UpdateOne(nil, filter, update)
+		//if err != nil {
+		//	fmt.Println("Error updating existing rating:", err.Error())
+		//	return err
+		//}
+		return err
 	}
 
 	// Update the total ratings for the entity being rated
-	// Assume "entityID" is passed with the rating, or set a default for now
-	entityID := "exampleEntityID" // You would probably get this from the request body or params
+	// Assume "question_id" is passed with the rating
+	questionID := userRate.QuestionId // Use userRate.QuestionId directly
 
 	// Query the total ratings for the entity
-	totalRatingsFilter := bson.M{"entityID": entityID}
+	totalRatingsFilter := bson.M{"question_id": questionID}
 	var totalRates model.TotalRates
 	err = totalRatingsCollection.FindOne(nil, totalRatingsFilter).Decode(&totalRates)
 
@@ -279,18 +281,16 @@ func (impl *QuestionInterfaceImpl) RateQuestion(userRate model.UserRate) error {
 		// No total ratings found, create a new record
 		totalRates = model.TotalRates{Count: 1, TotalStars: int64(userRate.Rate)}
 		_, err := totalRatingsCollection.InsertOne(nil, bson.M{
-			"entityID":   entityID,
-			"count":      totalRates.Count,
-			"totalStars": totalRates.TotalStars,
+			"question_id": userRate.QuestionId,
+			"count":       totalRates.Count,
+			"total_stars": totalRates.TotalStars,
 		})
 		if err != nil {
-			fmt.Println(err.Error())
-			//http.Error(writer, fmt.Sprintf("Failed to insert total ratings: %s", err), http.StatusInternalServerError)
+			fmt.Println("Error inserting total ratings:", err.Error())
 			return err
 		}
 	} else if err != nil {
-		fmt.Println(err.Error())
-		//http.Error(writer, fmt.Sprintf("Failed to query total ratings: %s", err), http.StatusInternalServerError)
+		fmt.Println("Error querying total ratings:", err.Error())
 		return err
 	} else {
 		// Update total ratings
@@ -299,17 +299,17 @@ func (impl *QuestionInterfaceImpl) RateQuestion(userRate model.UserRate) error {
 
 		update := bson.M{
 			"$set": bson.M{
-				"count":      totalRates.Count,
-				"totalStars": totalRates.TotalStars,
+				"count":       totalRates.Count,
+				"total_stars": totalRates.TotalStars,
 			},
 		}
 		_, err := totalRatingsCollection.UpdateOne(nil, totalRatingsFilter, update)
 		if err != nil {
-			//http.Error(writer, fmt.Sprintf("Failed to update total ratings: %s", err), http.StatusInternalServerError)
-			fmt.Println(err.Error())
+			fmt.Println("Error updating total ratings:", err.Error())
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -334,40 +334,30 @@ func (impl *QuestionInterfaceImpl) GetRatings(questionId int64) (model.RatingsRe
 	if totalRates.Count > 0 {
 		// Calculate rate: TotalStars / Count
 		averageRate := float64(totalRates.TotalStars) / float64(totalRates.Count)
-		result.Stars = averageRate
+		result.Rate = averageRate
 
 	} else {
-		result.Stars = 0
+		result.Rate = 0
 	}
 	return result, err
 }
 
 func (impl *QuestionInterfaceImpl) SeeBefore(seeBefore model.SeeBeforeCount) error {
 	// Retrieve the collection for question views
-	questionViewsCollection := db.MongoClient.Database("interview_guide").Collection("questionViews")
+	questionViewsCollection := db.MongoClient.Database("interview_guide").Collection("question")
 
 	// Query to check if this question has a view count
-	filter := bson.M{"questionId": seeBefore.QuestionId}
+	filter := bson.M{"question_id": seeBefore.QuestionId}
 	var existingCount model.SeeBeforeCount
 	err := questionViewsCollection.FindOne(nil, filter).Decode(&existingCount)
 
-	if err == mongo.ErrNoDocuments {
-		// No document found for this questionId, so create a new record with count = 1
-		_, err := questionViewsCollection.InsertOne(nil, bson.M{
-			"questionId": seeBefore.QuestionId,
-			"count":      1,
-		})
-		if err != nil {
-			fmt.Println(err.Error())
-			return err
-		}
-	} else if err != nil {
+	if err != nil {
 		fmt.Println(err.Error())
 		return err
 	} else {
 		// Question found, increment the count
 		update := bson.M{
-			"$inc": bson.M{"count": 1},
+			"$inc": bson.M{"views": 1},
 		}
 		_, err := questionViewsCollection.UpdateOne(nil, filter, update)
 		if err != nil {
